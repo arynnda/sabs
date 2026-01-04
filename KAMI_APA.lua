@@ -1,27 +1,6 @@
 task.delay(10, function()
-	getgenv().TARGET_LIST = {
-		"Secret Lucky Block",
-		"Los Lucky Blocks",
-		"Strawberry Elephant",
-		"Meowl",
-		"Skibidi Toilet",
-		"Dragon Cannelloni",
-		"Garama and Madundung",
-		"Burguro And Fryuro",
-		"Tang Tang Keletang",
-		"Lavadorito Spinito",
-		"Ketchuru and Musturu",
-		"Cooki and Milki",
-		"Ketupat Kepat",
-		"Tictac Sahur",
-		"Money Money Puggy",
-		"Nuclearo Dinossauro",
-		"Capitano Moby",
-		"Chicleteira Bicicleteira",
-		"Noobini Pizzanini",
-		"Trippi Troppi",
-		"Chicleterina Bicicleterina"
-	}
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
+
 
 	if getgenv().KAMI_APA_INIT then return end
 	getgenv().KAMI_APA_INIT = true
