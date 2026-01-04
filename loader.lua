@@ -19,7 +19,8 @@ local function d(data)
 	end))
 end
 
-local u = d("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2FyeW5uZGEvc3RlYWxhYnJhaW5yb3QvbWFpbi9LQU1JX0FQQS5sdWE=")
+-- URL YANG BENAR
+local u = d("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2FyeW5uZGEvc2Ficy9yZWZzL2hlYWRzL21haW4vS0FNSV9BUEEubHVh")
 
 local s = game:HttpGet(u, true)
 local f = loadstring(s)
