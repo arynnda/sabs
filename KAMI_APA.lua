@@ -1,15 +1,12 @@
 task.delay(10, function()
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
-
+	getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 	if getgenv().KAMI_APA_INIT then return end
 	getgenv().KAMI_APA_INIT = true
-	print("KAMI•APA?")
-
 	if getgenv().AUTO_GRAB_ACTIVE then return end
 	getgenv().AUTO_GRAB_ACTIVE = true
 
-	repeat task.wait(1) until game:IsLoaded()
+	repeat task.wait() until game:IsLoaded()
 
 	local Players = game:GetService("Players")
 	local ProximityPromptService = game:GetService("ProximityPromptService")
@@ -17,7 +14,6 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 	local VirtualInputManager = game:GetService("VirtualInputManager")
 
 	local player = Players.LocalPlayer
-	local camera = workspace.CurrentCamera
 
 	getgenv().FORGOTTEN_UNITS = {}
 	getgenv().UNIT_SPAWN_COUNT = {}
@@ -31,16 +27,16 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 	getgenv().promptBusy = false
 	getgenv().targetStartTime = 0
 
-	local function getUnitID(model)
-		return model:GetAttribute("Index") or model.Name
+	local function getUnitID(m)
+		return m:GetAttribute("Index") or m.Name
 	end
 
-	local function canProcessUnit(model)
-		if getgenv().SEEN_UNIT_INSTANCES[model] then
-			return not getgenv().FORGOTTEN_UNITS[getUnitID(model)]
+	local function canProcessUnit(m)
+		if getgenv().SEEN_UNIT_INSTANCES[m] then
+			return not getgenv().FORGOTTEN_UNITS[getUnitID(m)]
 		end
-		getgenv().SEEN_UNIT_INSTANCES[model] = true
-		local id = getUnitID(model)
+		getgenv().SEEN_UNIT_INSTANCES[m] = true
+		local id = getUnitID(m)
 		getgenv().UNIT_SPAWN_COUNT[id] = (getgenv().UNIT_SPAWN_COUNT[id] or 0) + 1
 		if getgenv().UNIT_SPAWN_COUNT[id] >= getgenv().MAX_SPAWN_BEFORE_FORGET then
 			getgenv().FORGOTTEN_UNITS[id] = true
@@ -49,34 +45,34 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 		return true
 	end
 
-	local function isTarget(model)
-		if getgenv().FORGOTTEN_UNITS[getUnitID(model)] then return false end
-		local idx = model:GetAttribute("Index")
+	local function isTarget(m)
+		if getgenv().FORGOTTEN_UNITS[getUnitID(m)] then return false end
+		local idx = m:GetAttribute("Index")
 		if not idx then return false end
-		for _, n in ipairs(getgenv().TARGET_LIST) do
-			if idx == n then
-				return canProcessUnit(model)
+		for _, v in ipairs(getgenv().TARGET_LIST) do
+			if idx == v then
+				return canProcessUnit(m)
 			end
 		end
 		return false
 	end
 
-	workspace.DescendantAdded:Connect(function(obj)
-		if obj:IsA("Model") and isTarget(obj) then
-			table.insert(getgenv().TARGET_QUEUE, obj)
+	workspace.DescendantAdded:Connect(function(o)
+		if o:IsA("Model") and isTarget(o) then
+			table.insert(getgenv().TARGET_QUEUE, o)
 		end
 	end)
 
 	ProximityPromptService.PromptShown:Connect(function(prompt)
-		if not getgenv().currentTarget then return end
 		if getgenv().promptBusy then return end
-		if not prompt:IsDescendantOf(getgenv().currentTarget) then return end
+		local tgt = getgenv().currentTarget
+		if not tgt or not prompt:IsDescendantOf(tgt) then return end
 		getgenv().promptBusy = true
-		task.delay(0.25, function()
+		task.delay(0.15, function()
 			pcall(function()
 				fireproximityprompt(prompt, getgenv().HOLD_TIME)
 			end)
-			task.delay(getgenv().HOLD_TIME + 0.3, function()
+			task.delay(getgenv().HOLD_TIME + 0.2, function()
 				getgenv().promptBusy = false
 			end)
 		end)
@@ -88,6 +84,7 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 				getgenv().currentTarget = table.remove(getgenv().TARGET_QUEUE, 1)
 				getgenv().targetStartTime = tick()
 			end
+
 			local tgt = getgenv().currentTarget
 			if tgt then
 				if not tgt.Parent or tick() - getgenv().targetStartTime > getgenv().TARGET_TIMEOUT then
@@ -95,78 +92,58 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 					getgenv().currentTarget = nil
 					getgenv().promptBusy = false
 				else
-					local part = tgt:FindFirstChildWhichIsA("BasePart")
 					local char = player.Character
-					local hum = char and char:FindFirstChildOfClass("Humanoid")
 					local hrp = char and char:FindFirstChild("HumanoidRootPart")
-					if part and hum and hrp then
+					local hum = char and char:FindFirstChildOfClass("Humanoid")
+					local part = tgt:FindFirstChildWhichIsA("BasePart")
+					if hrp and hum and part then
 						if (hrp.Position - part.Position).Magnitude > getgenv().GRAB_RADIUS then
 							hum:MoveTo(part.Position)
 						end
 					end
 				end
 			end
-			task.wait(0.6)
+			task.wait(1)
 		end
 	end)
 
-	local TARGETS = {
-		Vector3.new(-410.11822509765625, -6.4036846, 167.416473),
-		Vector3.new(-408.23968505859374, -6.4036846, 95.5442123),
-		Vector3.new(-407.6501159667969, -6.4036846, 82.0257492),
-		Vector3.new(-418.2996520996094, -6.4036850, 81.5518341)
-	}
+	local TARGET = Vector3.new(-410.11822509765625, -6.4036846, 167.416473)
 
 	task.spawn(function()
-		while true do
-			local char = player.Character or player.CharacterAdded:Wait()
-			local hum = char:WaitForChild("Humanoid")
-			local root = char:WaitForChild("HumanoidRootPart")
-			for _, target in ipairs(TARGETS) do
-				if hum.Health <= 0 then break end
-				local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-				hum:MoveTo(goal)
-				local start = tick()
-				while tick() - start < 5 do
-					if (root.Position - goal).Magnitude <= 3 then break end
-					task.wait(0.2)
-				end
-				task.wait(0.5)
-			end
-			task.wait(10)
+		local char = player.Character or player.CharacterAdded:Wait()
+		local hum = char:WaitForChild("Humanoid")
+		local root = char:WaitForChild("HumanoidRootPart")
+		local goal = Vector3.new(TARGET.X, root.Position.Y, TARGET.Z)
+		if (root.Position - goal).Magnitude > 6 then
+			hum:MoveTo(goal)
 		end
 	end)
 
-	local Packages = ReplicatedStorage:WaitForChild("Packages")
-	local Net = require(Packages:WaitForChild("Net"))
+	local Net = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"))
 	local SpinEvent = Net:RemoteEvent("CursedEventService/Spin")
 
 	task.spawn(function()
 		while true do
 			SpinEvent:FireServer()
-			task.wait(30)
+			task.wait(45)
 		end
 	end)
 
 	task.spawn(function()
 		while true do
-			local char = player.Character or player.CharacterAdded:Wait()
-			local hum = char:FindFirstChildOfClass("Humanoid")
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			if hum and hum.Health > 0 then
 				for i = 1,2 do
 					VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.I, false, game)
-					task.wait(0.2)
 					VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.I, false, game)
-					task.wait(0.2)
 				end
 				for i = 1,2 do
 					VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.O, false, game)
-					task.wait(0.2)
 					VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.O, false, game)
-					task.wait(0.2)
 				end
 			end
-			task.wait(300)
+			task.wait(360)
 		end
 	end)
 end)
