@@ -21,7 +21,7 @@ task.delay(10, function()
 	getgenv().MAX_SPAWN_BEFORE_FORGET = 10
 	getgenv().GRAB_RADIUS = 8
 	getgenv().HOLD_TIME = 2.5
-	getgenv().TARGET_TIMEOUT = 10
+	getgenv().TARGET_TIMEOUT = 12
 	getgenv().TARGET_QUEUE = {}
 	getgenv().currentTarget = nil
 	getgenv().promptBusy = false
@@ -93,10 +93,10 @@ task.delay(10, function()
 					getgenv().promptBusy = false
 				else
 					local char = player.Character
-					local hrp = char and char:FindFirstChild("HumanoidRootPart")
 					local hum = char and char:FindFirstChildOfClass("Humanoid")
+					local hrp = char and char:FindFirstChild("HumanoidRootPart")
 					local part = tgt:FindFirstChildWhichIsA("BasePart")
-					if hrp and hum and part then
+					if hum and hrp and part then
 						if (hrp.Position - part.Position).Magnitude > getgenv().GRAB_RADIUS then
 							hum:MoveTo(part.Position)
 						end
@@ -127,7 +127,8 @@ task.delay(10, function()
 		end
 	end)
 
-	local Net = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"))
+	local Packages = ReplicatedStorage:WaitForChild("Packages")
+	local Net = require(Packages:WaitForChild("Net"))
 	local SpinEvent = Net:RemoteEvent("CursedEventService/Spin")
 
 	task.spawn(function()
