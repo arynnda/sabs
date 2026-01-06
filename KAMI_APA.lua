@@ -107,15 +107,23 @@ task.delay(10, function()
 		end
 	end)
 
-	local TARGET = Vector3.new(-410.11822509765625, -6.4036846, 167.416473)
+	local HOME_POS = Vector3.new(-410.11822509765625, -6.4036846, 167.416473)
+	local RETURN_DISTANCE = 25
 
 	task.spawn(function()
-		local char = player.Character or player.CharacterAdded:Wait()
-		local hum = char:WaitForChild("Humanoid")
-		local root = char:WaitForChild("HumanoidRootPart")
-		local goal = Vector3.new(TARGET.X, root.Position.Y, TARGET.Z)
-		if (root.Position - goal).Magnitude > 6 then
-			hum:MoveTo(goal)
+		while true do
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+
+			if hum and root and hum.Health > 0 then
+				local target = Vector3.new(HOME_POS.X, root.Position.Y, HOME_POS.Z)
+				if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+					hum:MoveTo(target)
+				end
+			end
+
+			task.wait(30)
 		end
 	end)
 
