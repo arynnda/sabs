@@ -27,6 +27,9 @@ task.delay(10, function()
 	getgenv().promptBusy = false
 	getgenv().targetStartTime = 0
 
+	getgenv().TARGET_SPAWN_TIME = {}
+	getgenv().CHASE_DELAY = 5
+
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
 	end
@@ -59,6 +62,7 @@ task.delay(10, function()
 
 	workspace.DescendantAdded:Connect(function(o)
 		if o:IsA("Model") and isTarget(o) then
+			getgenv().TARGET_SPAWN_TIME[o] = tick()
 			table.insert(getgenv().TARGET_QUEUE, o)
 		end
 	end)
@@ -89,6 +93,7 @@ task.delay(10, function()
 			if tgt then
 				if not tgt.Parent or tick() - getgenv().targetStartTime > getgenv().TARGET_TIMEOUT then
 					getgenv().SEEN_UNIT_INSTANCES[tgt] = nil
+					getgenv().TARGET_SPAWN_TIME[tgt] = nil
 					getgenv().currentTarget = nil
 					getgenv().promptBusy = false
 				else
@@ -96,7 +101,9 @@ task.delay(10, function()
 					local hum = char and char:FindFirstChildOfClass("Humanoid")
 					local hrp = char and char:FindFirstChild("HumanoidRootPart")
 					local part = tgt:FindFirstChildWhichIsA("BasePart")
-					if hum and hrp and part then
+
+					local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
+					if hum and hrp and part and spawnTime and tick() - spawnTime >= getgenv().CHASE_DELAY then
 						if (hrp.Position - part.Position).Magnitude > getgenv().GRAB_RADIUS then
 							hum:MoveTo(part.Position)
 						end
@@ -122,9 +129,49 @@ task.delay(10, function()
 					hum:MoveTo(target)
 				end
 			end
-
 			task.wait(30)
 		end
+	end)
+
+	local lastCash
+	local cashValue
+
+	local function setupCashWatcher()
+		local stats = player:FindFirstChild("leaderstats")
+		if not stats then return end
+
+		cashValue =
+			stats:FindFirstChild("Cash")
+			or stats:FindFirstChild("Money")
+			or stats:FindFirstChild("Coins")
+
+		if not cashValue or not cashValue:IsA("NumberValue") then return end
+
+		lastCash = cashValue.Value
+
+		cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+			if not getgenv().currentTarget then
+				lastCash = cashValue.Value
+				return
+			end
+
+			if cashValue.Value < lastCash then
+				local tgt = getgenv().currentTarget
+				if tgt then
+					getgenv().SEEN_UNIT_INSTANCES[tgt] = nil
+					getgenv().TARGET_SPAWN_TIME[tgt] = nil
+				end
+				getgenv().currentTarget = nil
+				getgenv().promptBusy = false
+			end
+
+			lastCash = cashValue.Value
+		end)
+	end
+
+	task.spawn(function()
+		repeat task.wait(1) until player:FindFirstChild("leaderstats")
+		setupCashWatcher()
 	end)
 
 	local Packages = ReplicatedStorage:WaitForChild("Packages")
