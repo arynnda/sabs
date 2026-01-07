@@ -28,7 +28,7 @@ task.delay(10, function()
 	getgenv().targetStartTime = 0
 
 	getgenv().TARGET_SPAWN_TIME = {}
-	getgenv().CHASE_DELAY = 5
+	getgenv().CHASE_DELAY = 10
 
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
