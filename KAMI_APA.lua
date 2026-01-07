@@ -114,7 +114,7 @@ task.delay(5, function()
 		end
 	end)
 
-	local HOME_POS = Vector3.new(-410.11822509765625, -6.4036846, 167.416473)
+	local HOME_POS = Vector3.new(-411.2308654785165, -6.501978874206543, 23230792236328125)
 	local RETURN_DISTANCE = 25
 
 	task.spawn(function()
