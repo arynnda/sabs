@@ -1,4 +1,4 @@
-task.delay(10, function()
+task.delay(5, function()
 	getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 	if getgenv().KAMI_APA_INIT then return end
