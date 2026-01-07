@@ -6,7 +6,8 @@ local Players = game:GetService("Players")
 repeat task.wait() until Players.LocalPlayer
 task.wait(0)
 
-getgenv().FPS_CAP = 12
+getgenv().FPS_CAP = tonumber(getgenv().FPS_CAP) or 12
+
 if typeof(setfpscap) == "function" then
 	task.spawn(function()
 		while true do
@@ -105,6 +106,18 @@ local function createOverlay()
 	overlayFrame.ZIndex = getgenv().BlackModeConfig.overlayZIndex
 	overlayFrame.Parent = overlayGui
 
+	local centerLabel = Instance.new("TextLabel")
+	centerLabel.Size = UDim2.new(0,400,0,60)
+	centerLabel.Position = UDim2.fromScale(0.5,0.5)
+	centerLabel.AnchorPoint = Vector2.new(0.5,0.5)
+	centerLabel.BackgroundTransparency = 1
+	centerLabel.Text = "KAMI•APA?"
+	centerLabel.TextColor3 = Color3.new(1,1,1)
+	centerLabel.Font = Enum.Font.GothamBlack
+	centerLabel.TextSize = 36
+	centerLabel.ZIndex = overlayFrame.ZIndex + 1
+	centerLabel.Parent = overlayGui
+
 	local fpsLabel = Instance.new("TextLabel")
 	fpsLabel.Size = UDim2.new(0,200,0,40)
 	fpsLabel.Position = UDim2.new(0.5,-100,0,15)
@@ -119,7 +132,7 @@ local function createOverlay()
 	RunService.RenderStepped:Connect(function()
 		frames += 1
 		if tick() - last >= 1 then
-			fpsLabel.Text = "FPS : "..frames
+			fpsLabel.Text = "FPS : "..frames.." / "..getgenv().FPS_CAP
 			frames = 0
 			last = tick()
 		end
