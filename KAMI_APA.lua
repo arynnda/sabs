@@ -18,7 +18,7 @@ task.delay(5, function()
 	getgenv().FORGOTTEN_UNITS = {}
 	getgenv().UNIT_SPAWN_COUNT = {}
 	getgenv().SEEN_UNIT_INSTANCES = {}
-	getgenv().MAX_SPAWN_BEFORE_FORGET = 6
+	getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 	getgenv().GRAB_RADIUS = 8
 	getgenv().HOLD_TIME = 2.5
 	getgenv().TARGET_TIMEOUT = 15
@@ -28,7 +28,7 @@ task.delay(5, function()
 	getgenv().targetStartTime = 0
 
 	getgenv().TARGET_SPAWN_TIME = {}
-	getgenv().CHASE_DELAY = 5
+	getgenv().CHASE_DELAY = 10
 
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
