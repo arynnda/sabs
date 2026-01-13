@@ -9,7 +9,6 @@ task.delay(5, function()
 	repeat task.wait() until game:IsLoaded()
 
 	local Players = game:GetService("Players")
-	local ProximityPromptService = game:GetService("ProximityPromptService")
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -26,7 +25,6 @@ task.delay(5, function()
 	getgenv().currentTarget = nil
 	getgenv().promptBusy = false
 	getgenv().targetStartTime = 0
-
 	getgenv().TARGET_SPAWN_TIME = {}
 	getgenv().CHASE_DELAY = 5
 
@@ -67,20 +65,25 @@ task.delay(5, function()
 		end
 	end)
 
-	ProximityPromptService.PromptShown:Connect(function(prompt)
+	local function tryGrabTarget(tgt)
 		if getgenv().promptBusy then return end
-		local tgt = getgenv().currentTarget
-		if not tgt or not prompt:IsDescendantOf(tgt) then return end
-		getgenv().promptBusy = true
-		task.delay(0.15, function()
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+
+		local prompt = tgt:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if not prompt or not prompt.Enabled then return end
+
+		if (hrp.Position - prompt.Parent.Position).Magnitude <= prompt.MaxActivationDistance then
+			getgenv().promptBusy = true
 			pcall(function()
 				fireproximityprompt(prompt, getgenv().HOLD_TIME)
 			end)
-			task.delay(getgenv().HOLD_TIME + 0.2, function()
+			task.delay(getgenv().HOLD_TIME + 0.3, function()
 				getgenv().promptBusy = false
 			end)
-		end)
-	end)
+		end
+	end
 
 	task.spawn(function()
 		while true do
@@ -101,16 +104,18 @@ task.delay(5, function()
 					local hum = char and char:FindFirstChildOfClass("Humanoid")
 					local hrp = char and char:FindFirstChild("HumanoidRootPart")
 					local part = tgt:FindFirstChildWhichIsA("BasePart")
-
 					local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
+
 					if hum and hrp and part and spawnTime and tick() - spawnTime >= getgenv().CHASE_DELAY then
 						if (hrp.Position - part.Position).Magnitude > getgenv().GRAB_RADIUS then
 							hum:MoveTo(part.Position)
+						else
+							tryGrabTarget(tgt)
 						end
 					end
 				end
 			end
-			task.wait(1)
+			task.wait(0.8)
 		end
 	end)
 
@@ -122,7 +127,6 @@ task.delay(5, function()
 			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local root = char and char:FindFirstChild("HumanoidRootPart")
-
 			if hum and root and hum.Health > 0 then
 				local target = Vector3.new(HOME_POS.X, root.Position.Y, HOME_POS.Z)
 				if (root.Position - target).Magnitude >= RETURN_DISTANCE then
@@ -139,14 +143,8 @@ task.delay(5, function()
 	local function setupCashWatcher()
 		local stats = player:FindFirstChild("leaderstats")
 		if not stats then return end
-
-		cashValue =
-			stats:FindFirstChild("Cash")
-			or stats:FindFirstChild("Money")
-			or stats:FindFirstChild("Coins")
-
+		cashValue = stats:FindFirstChild("Cash") or stats:FindFirstChild("Money") or stats:FindFirstChild("Coins")
 		if not cashValue or not cashValue:IsA("NumberValue") then return end
-
 		lastCash = cashValue.Value
 
 		cashValue:GetPropertyChangedSignal("Value"):Connect(function()
@@ -154,7 +152,6 @@ task.delay(5, function()
 				lastCash = cashValue.Value
 				return
 			end
-
 			if cashValue.Value < lastCash then
 				local tgt = getgenv().currentTarget
 				if tgt then
@@ -164,7 +161,6 @@ task.delay(5, function()
 				getgenv().currentTarget = nil
 				getgenv().promptBusy = false
 			end
-
 			lastCash = cashValue.Value
 		end)
 	end
