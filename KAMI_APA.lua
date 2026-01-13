@@ -1,5 +1,5 @@
 task.delay(5, function()
-	getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
+	getgenv().TARGET_LIST = {}
 
 	if getgenv().KAMI_APA_INIT then return end
 	getgenv().KAMI_APA_INIT = true
@@ -81,6 +81,41 @@ task.delay(5, function()
 			getgenv().TARGET_SPAWN_TIME[o] = tick()
 			table.insert(getgenv().TARGET_QUEUE, o)
 		end
+	end)
+
+	local lastCash
+	local cashValue
+
+	local function setupCashWatcher()
+		local stats = player:FindFirstChild("leaderstats")
+		if not stats then return end
+
+		cashValue =
+			stats:FindFirstChild("Cash")
+			or stats:FindFirstChild("Money")
+			or stats:FindFirstChild("Coins")
+
+		if not cashValue or not cashValue:IsA("NumberValue") then return end
+		lastCash = cashValue.Value
+
+		cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+			if not getgenv().currentTarget then
+				lastCash = cashValue.Value
+				return
+			end
+
+			if cashValue.Value < lastCash then
+				setHoldE(false)
+				getgenv().currentTarget = nil
+			end
+
+			lastCash = cashValue.Value
+		end)
+	end
+
+	task.spawn(function()
+		repeat task.wait(1) until player:FindFirstChild("leaderstats")
+		setupCashWatcher()
 	end)
 
 	task.spawn(function()
