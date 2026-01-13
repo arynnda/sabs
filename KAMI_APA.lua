@@ -1,5 +1,5 @@
 task.delay(5, function()
-	getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
+	getgenv().TARGET_LIST = getgenv().TARGET_LIST or {"Noobini Pizzanini"}
 
 	if getgenv().KAMI_APA_INIT then return end
 	getgenv().KAMI_APA_INIT = true
@@ -20,7 +20,7 @@ task.delay(5, function()
 	getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 	getgenv().GRAB_RADIUS = 10
-	getgenv().TARGET_TIMEOUT = 14
+	getgenv().TARGET_TIMEOUT = 30
 	getgenv().HOLD_TIME = 3
 
 	getgenv().TARGET_QUEUE = {}
@@ -75,6 +75,21 @@ task.delay(5, function()
 		end
 		return false
 	end
+
+	-- === TAMBAHAN SAJA (SCAN AWAL) ===
+	local function scanExistingTargets()
+		for _, o in ipairs(workspace:GetDescendants()) do
+			if o:IsA("Model") and isTarget(o) then
+				if not getgenv().TARGET_SPAWN_TIME[o] then
+					getgenv().TARGET_SPAWN_TIME[o] = tick()
+					table.insert(getgenv().TARGET_QUEUE, o)
+				end
+			end
+		end
+	end
+
+	scanExistingTargets()
+	-- === AKHIR TAMBAHAN ===
 
 	workspace.DescendantAdded:Connect(function(o)
 		if o:IsA("Model") and isTarget(o) then
