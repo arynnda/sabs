@@ -28,8 +28,8 @@ task.delay(5, function()
 	getgenv().TARGET_SPAWN_TIME = {}
 	getgenv().CHASE_DELAY = 5
 
-	local PRESS_TIME = 0.12
-	local PRESS_DELAY = 0.4
+	local PRESS_TIME = 1.5
+	local PRESS_DELAY = 0.2
 
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
