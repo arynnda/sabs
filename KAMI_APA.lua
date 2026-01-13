@@ -28,7 +28,7 @@ task.delay(5, function()
 	getgenv().targetStartTime = 0
 	getgenv().TARGET_SPAWN_TIME = {}
 
-	getgenv().CHASE_DELAY = 5
+	getgenv().CHASE_DELAY = 10
 
 	local holdingE = false
 	local holdStart = 0
@@ -76,7 +76,6 @@ task.delay(5, function()
 		return false
 	end
 
-	-- === TAMBAHAN SAJA (SCAN AWAL) ===
 	local function scanExistingTargets()
 		for _, o in ipairs(workspace:GetDescendants()) do
 			if o:IsA("Model") and isTarget(o) then
@@ -89,7 +88,6 @@ task.delay(5, function()
 	end
 
 	scanExistingTargets()
-	-- === AKHIR TAMBAHAN ===
 
 	workspace.DescendantAdded:Connect(function(o)
 		if o:IsA("Model") and isTarget(o) then
@@ -105,12 +103,9 @@ task.delay(5, function()
 		local stats = player:FindFirstChild("leaderstats")
 		if not stats then return end
 
-		cashValue =
-			stats:FindFirstChild("Cash")
-			or stats:FindFirstChild("Money")
-			or stats:FindFirstChild("Coins")
-
+		cashValue = stats:FindFirstChild("Cash") or stats:FindFirstChild("Money") or stats:FindFirstChild("Coins")
 		if not cashValue or not cashValue:IsA("NumberValue") then return end
+
 		lastCash = cashValue.Value
 
 		cashValue:GetPropertyChangedSignal("Value"):Connect(function()
@@ -118,12 +113,10 @@ task.delay(5, function()
 				lastCash = cashValue.Value
 				return
 			end
-
 			if cashValue.Value < lastCash then
 				setHoldE(false)
 				getgenv().currentTarget = nil
 			end
-
 			lastCash = cashValue.Value
 		end)
 	end
@@ -148,18 +141,23 @@ task.delay(5, function()
 				local part = tgt:FindFirstChildWhichIsA("BasePart")
 
 				if hum and hrp and part then
-					local dist = (hrp.Position - part.Position).Magnitude
-					hum:MoveTo(part.Position)
+					local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
+					if not spawnTime or tick() - spawnTime >= getgenv().CHASE_DELAY then
+						local dist = (hrp.Position - part.Position).Magnitude
+						hum:MoveTo(part.Position)
 
-					if dist <= getgenv().GRAB_RADIUS then
-						setHoldE(true)
+						if dist <= getgenv().GRAB_RADIUS then
+							setHoldE(true)
+						else
+							setHoldE(false)
+						end
+
+						if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
+							setHoldE(false)
+							getgenv().currentTarget = nil
+						end
 					else
 						setHoldE(false)
-					end
-
-					if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
-						setHoldE(false)
-						getgenv().currentTarget = nil
 					end
 				end
 
