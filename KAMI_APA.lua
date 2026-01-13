@@ -18,18 +18,33 @@ task.delay(5, function()
 	getgenv().UNIT_SPAWN_COUNT = {}
 	getgenv().SEEN_UNIT_INSTANCES = {}
 	getgenv().MAX_SPAWN_BEFORE_FORGET = 8
+
 	getgenv().GRAB_RADIUS = 10
-	getgenv().HOLD_TIME = 6
-	getgenv().TARGET_TIMEOUT = 12
+	getgenv().TARGET_TIMEOUT = 14
+	getgenv().HOLD_TIME = 3
+
 	getgenv().TARGET_QUEUE = {}
 	getgenv().currentTarget = nil
-	getgenv().promptBusy = false
 	getgenv().targetStartTime = 0
 	getgenv().TARGET_SPAWN_TIME = {}
+
 	getgenv().CHASE_DELAY = 0
 
-	local PRESS_TIME = 9999
-	local PRESS_DELAY = 0
+	local holdingE = false
+	local holdStart = 0
+	local MAX_HOLD_TIME = 6
+	local RETRY_INTERVAL = 0.25
+
+	local function setHoldE(state)
+		if state and not holdingE then
+			holdingE = true
+			holdStart = tick()
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+		elseif not state and holdingE then
+			holdingE = false
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+		end
+	end
 
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
@@ -68,35 +83,6 @@ task.delay(5, function()
 		end
 	end)
 
-	local function pressEForTarget()
-		pcall(function()
-			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-			task.wait(PRESS_TIME)
-			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-		end)
-	end
-
-	local function tryGrabTarget(tgt)
-		if getgenv().promptBusy then return end
-		local char = player.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if not hrp then return end
-
-		local prompt = tgt:FindFirstChildWhichIsA("ProximityPrompt", true)
-
-		if prompt and prompt.Enabled then
-			if (hrp.Position - prompt.Parent.Position).Magnitude <= prompt.MaxActivationDistance then
-				getgenv().promptBusy = true
-				pcall(function()
-					fireproximityprompt(prompt, getgenv().HOLD_TIME)
-				end)
-				task.delay(getgenv().HOLD_TIME + 0.3, function()
-					getgenv().promptBusy = false
-				end)
-			end
-		end
-	end
-
 	task.spawn(function()
 		while true do
 			if not getgenv().currentTarget and #getgenv().TARGET_QUEUE > 0 then
@@ -105,31 +91,38 @@ task.delay(5, function()
 			end
 
 			local tgt = getgenv().currentTarget
-			if tgt then
-				if not tgt.Parent or tick() - getgenv().targetStartTime > getgenv().TARGET_TIMEOUT then
-					getgenv().SEEN_UNIT_INSTANCES[tgt] = nil
-					getgenv().TARGET_SPAWN_TIME[tgt] = nil
-					getgenv().currentTarget = nil
-					getgenv().promptBusy = false
-				else
-					local char = player.Character
-					local hum = char and char:FindFirstChildOfClass("Humanoid")
-					local hrp = char and char:FindFirstChild("HumanoidRootPart")
-					local part = tgt:FindFirstChildWhichIsA("BasePart")
-					local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
+			if tgt and tgt.Parent then
+				local char = player.Character
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				local part = tgt:FindFirstChildWhichIsA("BasePart")
 
-					if hum and hrp and part and spawnTime and tick() - spawnTime >= getgenv().CHASE_DELAY then
-						if (hrp.Position - part.Position).Magnitude > getgenv().GRAB_RADIUS then
-							hum:MoveTo(part.Position)
-						else
-							tryGrabTarget(tgt)
-							pressEForTarget()
-							task.wait(PRESS_DELAY)
-						end
+				if hum and hrp and part then
+					local dist = (hrp.Position - part.Position).Magnitude
+					hum:MoveTo(part.Position)
+
+					if dist <= getgenv().GRAB_RADIUS then
+						setHoldE(true)
+					else
+						setHoldE(false)
+					end
+
+					if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
+						setHoldE(false)
+						getgenv().currentTarget = nil
 					end
 				end
+
+				if tick() - getgenv().targetStartTime >= getgenv().TARGET_TIMEOUT then
+					setHoldE(false)
+					getgenv().currentTarget = nil
+				end
+			else
+				setHoldE(false)
+				getgenv().currentTarget = nil
 			end
-			task.wait(0.8)
+
+			task.wait(RETRY_INTERVAL)
 		end
 	end)
 
