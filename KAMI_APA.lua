@@ -19,7 +19,7 @@ task.delay(5, function()
 	getgenv().SEEN_UNIT_INSTANCES = {}
 	getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 	getgenv().GRAB_RADIUS = 10
-	getgenv().HOLD_TIME = 2.5
+	getgenv().HOLD_TIME = 6
 	getgenv().TARGET_TIMEOUT = 12
 	getgenv().TARGET_QUEUE = {}
 	getgenv().currentTarget = nil
