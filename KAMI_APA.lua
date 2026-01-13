@@ -28,6 +28,9 @@ task.delay(5, function()
 	getgenv().TARGET_SPAWN_TIME = {}
 	getgenv().CHASE_DELAY = 5
 
+	local PRESS_TIME = 0.12
+	local PRESS_DELAY = 0.4
+
 	local function getUnitID(m)
 		return m:GetAttribute("Index") or m.Name
 	end
@@ -65,6 +68,14 @@ task.delay(5, function()
 		end
 	end)
 
+	local function pressEForTarget()
+		pcall(function()
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+			task.wait(PRESS_TIME)
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+		end)
+	end
+
 	local function tryGrabTarget(tgt)
 		if getgenv().promptBusy then return end
 		local char = player.Character
@@ -72,16 +83,17 @@ task.delay(5, function()
 		if not hrp then return end
 
 		local prompt = tgt:FindFirstChildWhichIsA("ProximityPrompt", true)
-		if not prompt or not prompt.Enabled then return end
 
-		if (hrp.Position - prompt.Parent.Position).Magnitude <= prompt.MaxActivationDistance then
-			getgenv().promptBusy = true
-			pcall(function()
-				fireproximityprompt(prompt, getgenv().HOLD_TIME)
-			end)
-			task.delay(getgenv().HOLD_TIME + 0.3, function()
-				getgenv().promptBusy = false
-			end)
+		if prompt and prompt.Enabled then
+			if (hrp.Position - prompt.Parent.Position).Magnitude <= prompt.MaxActivationDistance then
+				getgenv().promptBusy = true
+				pcall(function()
+					fireproximityprompt(prompt, getgenv().HOLD_TIME)
+				end)
+				task.delay(getgenv().HOLD_TIME + 0.3, function()
+					getgenv().promptBusy = false
+				end)
+			end
 		end
 	end
 
@@ -111,6 +123,8 @@ task.delay(5, function()
 							hum:MoveTo(part.Position)
 						else
 							tryGrabTarget(tgt)
+							pressEForTarget()
+							task.wait(PRESS_DELAY)
 						end
 					end
 				end
@@ -135,39 +149,6 @@ task.delay(5, function()
 			end
 			task.wait(30)
 		end
-	end)
-
-	local lastCash
-	local cashValue
-
-	local function setupCashWatcher()
-		local stats = player:FindFirstChild("leaderstats")
-		if not stats then return end
-		cashValue = stats:FindFirstChild("Cash") or stats:FindFirstChild("Money") or stats:FindFirstChild("Coins")
-		if not cashValue or not cashValue:IsA("NumberValue") then return end
-		lastCash = cashValue.Value
-
-		cashValue:GetPropertyChangedSignal("Value"):Connect(function()
-			if not getgenv().currentTarget then
-				lastCash = cashValue.Value
-				return
-			end
-			if cashValue.Value < lastCash then
-				local tgt = getgenv().currentTarget
-				if tgt then
-					getgenv().SEEN_UNIT_INSTANCES[tgt] = nil
-					getgenv().TARGET_SPAWN_TIME[tgt] = nil
-				end
-				getgenv().currentTarget = nil
-				getgenv().promptBusy = false
-			end
-			lastCash = cashValue.Value
-		end)
-	end
-
-	task.spawn(function()
-		repeat task.wait(1) until player:FindFirstChild("leaderstats")
-		setupCashWatcher()
 	end)
 
 	local Packages = ReplicatedStorage:WaitForChild("Packages")
