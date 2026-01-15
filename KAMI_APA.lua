@@ -1,6 +1,8 @@
 if getgenv().KAMI_APA_ACTIVE then return end
 getgenv().KAMI_APA_ACTIVE = true
 
+task.wait(5)
+
 repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
