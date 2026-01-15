@@ -2,8 +2,8 @@ if getgenv().KAMI_APA_ACTIVE then return end
 getgenv().KAMI_APA_ACTIVE = true
 
 task.wait(5)
-
 repeat task.wait() until game:IsLoaded()
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -195,11 +195,11 @@ task.spawn(function()
 		local char = player.Character
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
 		if hum and hum.Health > 0 then
-			for i = 1,2 do
+			for _ = 1,2 do
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.I, false, game)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.I, false, game)
 			end
-			for i = 1,2 do
+			for _ = 1,2 do
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.O, false, game)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.O, false, game)
 			end
@@ -208,8 +208,7 @@ task.spawn(function()
 	end
 end)
 
-getgenv().AUTO_RESET = true
-local AUTO_RESET_DELAY = 60
+local AUTO_RESET_DELAY = 120
 
 task.spawn(function()
 	while true do
@@ -224,7 +223,29 @@ task.spawn(function()
 	end
 end)
 
-local function onCharacterAdded(char)
+getgenv().KAMI_APA_RESET_COOLDOWN = 120
+getgenv().KAMI_APA_LAST_RESET = getgenv().KAMI_APA_LAST_RESET or 0
+
+if not getgenv().CALL_KAMI_APA_RESET then
+	getgenv().CALL_KAMI_APA_RESET = function(reason)
+		local now = tick()
+		if now - getgenv().KAMI_APA_LAST_RESET < getgenv().KAMI_APA_RESET_COOLDOWN then
+			return false
+		end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not hum or hum.Health <= 0 then return false end
+		if getgenv().currentTarget then return false end
+		if #getgenv().TARGET_QUEUE > 0 then return false end
+		getgenv().KAMI_APA_LAST_RESET = now
+		hum.Health = 0
+		return true
+	end
+end
+
+CALL_KAMI_APA_RESET = getgenv().CALL_KAMI_APA_RESET
+
+local function onCharacterAdded()
 	task.wait(1)
 	setHoldE(false)
 	getgenv().currentTarget = nil
@@ -235,5 +256,5 @@ end
 
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
-	onCharacterAdded(player.Character)
+	onCharacterAdded()
 end
