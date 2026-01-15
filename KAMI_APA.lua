@@ -14,7 +14,7 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
-getgenv().MAX_SPAWN_BEFORE_FORGET = 20
+getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 getgenv().GRAB_RADIUS = 10
 getgenv().TARGET_TIMEOUT = 30
@@ -228,7 +228,7 @@ end
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
 
-	local AUTO_RESET_DELAY = 30
+	local AUTO_RESET_DELAY = 120
 
 	task.spawn(function()
 		while true do
