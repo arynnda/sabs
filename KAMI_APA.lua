@@ -208,43 +208,6 @@ task.spawn(function()
 	end
 end)
 
-local AUTO_RESET_DELAY = 120
-
-task.spawn(function()
-	while true do
-		task.wait(AUTO_RESET_DELAY)
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Health > 0 then
-			if not getgenv().currentTarget and #getgenv().TARGET_QUEUE == 0 then
-				hum.Health = 0
-			end
-		end
-	end
-end)
-
-getgenv().KAMI_APA_RESET_COOLDOWN = 120
-getgenv().KAMI_APA_LAST_RESET = getgenv().KAMI_APA_LAST_RESET or 0
-
-if not getgenv().CALL_KAMI_APA_RESET then
-	getgenv().CALL_KAMI_APA_RESET = function(reason)
-		local now = tick()
-		if now - getgenv().KAMI_APA_LAST_RESET < getgenv().KAMI_APA_RESET_COOLDOWN then
-			return false
-		end
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if not hum or hum.Health <= 0 then return false end
-		if getgenv().currentTarget then return false end
-		if #getgenv().TARGET_QUEUE > 0 then return false end
-		getgenv().KAMI_APA_LAST_RESET = now
-		hum.Health = 0
-		return true
-	end
-end
-
-CALL_KAMI_APA_RESET = getgenv().CALL_KAMI_APA_RESET
-
 local function onCharacterAdded()
 	task.wait(1)
 	setHoldE(false)
