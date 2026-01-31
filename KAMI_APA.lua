@@ -73,6 +73,18 @@ local function isTarget(m)
 	return false
 end
 
+-- FIX: ambil BasePart secara aman
+local function getTargetPart(model)
+	if model.PrimaryPart then
+		return model.PrimaryPart
+	end
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			return d
+		end
+	end
+end
+
 local function scanExistingTargets()
 	for _, o in ipairs(workspace:GetDescendants()) do
 		if o:IsA("Model") and isTarget(o) then
@@ -131,18 +143,23 @@ task.spawn(function()
 			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			local part = tgt:FindFirstChildWhichIsA("BasePart")
+			local part = getTargetPart(tgt) -- FIX
 
 			if hum and hrp and part then
 				local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
 				if not spawnTime or tick() - spawnTime >= getgenv().CHASE_DELAY then
 					local dist = (hrp.Position - part.Position).Magnitude
-					hum:MoveTo(part.Position)
+
+					if dist > 2 then -- FIX: jangan spam MoveTo
+						hum:MoveTo(part.Position)
+					end
+
 					if dist <= getgenv().GRAB_RADIUS then
 						setHoldE(true)
 					else
 						setHoldE(false)
 					end
+
 					if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
 						setHoldE(false)
 						getgenv().currentTarget = nil
