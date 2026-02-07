@@ -73,18 +73,6 @@ local function isTarget(m)
 	return false
 end
 
--- FIX: ambil BasePart secara aman
-local function getTargetPart(model)
-	if model.PrimaryPart then
-		return model.PrimaryPart
-	end
-	for _, d in ipairs(model:GetDescendants()) do
-		if d:IsA("BasePart") then
-			return d
-		end
-	end
-end
-
 local function scanExistingTargets()
 	for _, o in ipairs(workspace:GetDescendants()) do
 		if o:IsA("Model") and isTarget(o) then
@@ -143,23 +131,18 @@ task.spawn(function()
 			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			local part = getTargetPart(tgt) -- FIX
+			local part = tgt:FindFirstChildWhichIsA("BasePart")
 
 			if hum and hrp and part then
 				local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
 				if not spawnTime or tick() - spawnTime >= getgenv().CHASE_DELAY then
 					local dist = (hrp.Position - part.Position).Magnitude
-
-					if dist > 2 then -- FIX: jangan spam MoveTo
-						hum:MoveTo(part.Position)
-					end
-
+					hum:MoveTo(part.Position)
 					if dist <= getgenv().GRAB_RADIUS then
 						setHoldE(true)
 					else
 						setHoldE(false)
 					end
-
 					if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
 						setHoldE(false)
 						getgenv().currentTarget = nil
@@ -240,23 +223,4 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
 	onCharacterAdded()
-end
-
-if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-
-	local AUTO_RESET_DELAY = 180
-
-	task.spawn(function()
-		while true do
-			task.wait(AUTO_RESET_DELAY)
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-		end
-	end)
 end
