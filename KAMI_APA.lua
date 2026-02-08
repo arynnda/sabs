@@ -14,7 +14,7 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
-getgenv().MAX_SPAWN_BEFORE_FORGET = 15
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
 getgenv().GRAB_RADIUS = 10
 getgenv().TARGET_TIMEOUT = 30
@@ -71,6 +71,17 @@ local function isTarget(m)
 		end
 	end
 	return false
+end
+
+local function getTargetPart(model)
+	if model.PrimaryPart then
+		return model.PrimaryPart
+	end
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			return d
+		end
+	end
 end
 
 local function scanExistingTargets()
@@ -131,18 +142,23 @@ task.spawn(function()
 			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			local part = tgt:FindFirstChildWhichIsA("BasePart")
+			local part = getTargetPart(tgt)
 
 			if hum and hrp and part then
 				local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
 				if not spawnTime or tick() - spawnTime >= getgenv().CHASE_DELAY then
 					local dist = (hrp.Position - part.Position).Magnitude
-					hum:MoveTo(part.Position)
+
+					if dist > 2 then
+						hum:MoveTo(part.Position)
+					end
+
 					if dist <= getgenv().GRAB_RADIUS then
 						setHoldE(true)
 					else
 						setHoldE(false)
 					end
+
 					if holdingE and tick() - holdStart >= MAX_HOLD_TIME then
 						setHoldE(false)
 						getgenv().currentTarget = nil
@@ -182,17 +198,7 @@ task.spawn(function()
 	end
 end)
 
-local Packages = ReplicatedStorage:WaitForChild("Packages")
-local Net = require(Packages:WaitForChild("Net"))
-local SpinEvent = Net:RemoteEvent("CursedEventService/Spin")
-
-task.spawn(function()
-	while true do
-		SpinEvent:FireServer()
-		task.wait(45)
-	end
-end)
-
+-- AUTO I / O MASIH ADA
 task.spawn(function()
 	while true do
 		local char = player.Character
@@ -223,4 +229,23 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
 	onCharacterAdded()
+end
+
+if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
+	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
+
+	local AUTO_RESET_DELAY = 120
+
+	task.spawn(function()
+		while true do
+			task.wait(AUTO_RESET_DELAY)
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if hum and hum.Health > 0 then
+				if not getgenv().currentTarget and #getgenv().TARGET_QUEUE == 0 then
+					hum.Health = 0
+				end
+			end
+		end
+	end)
 end
