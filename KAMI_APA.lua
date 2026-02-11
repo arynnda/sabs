@@ -25,7 +25,7 @@ getgenv().currentTarget = nil
 getgenv().targetStartTime = 0
 getgenv().TARGET_SPAWN_TIME = {}
 
-getgenv().CHASE_DELAY = 0
+getgenv().CHASE_DELAY = 1
 
 local holdingE = false
 local holdStart = 0
