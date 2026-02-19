@@ -5,7 +5,7 @@ task.spawn(function()
 end)
 
 getgenv().BlackModeConfig = {
-    enableBlackOverlay = false,
+    enableBlackOverlay = true,
     overlayZIndex = 100000,
     overlayTransparency = 0,
     reduceGraphics = true,
@@ -238,4 +238,5 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
         toggleBooster()
     end
 end)
+
 
