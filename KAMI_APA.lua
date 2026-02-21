@@ -14,7 +14,7 @@ getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
-getgenv().MAX_SPAWN_BEFORE_FORGET = 15
+getgenv().MAX_SPAWN_BEFORE_FORGET = 10
 
 getgenv().GRAB_RADIUS = 10
 getgenv().TARGET_TIMEOUT = 30
