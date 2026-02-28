@@ -198,7 +198,7 @@ task.spawn(function()
 	end
 end)
 
--- AUTO I / O MASIH ADA
+
 task.spawn(function()
 	while true do
 		local char = player.Character
@@ -249,6 +249,7 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 		end
 	end)
 end
+
 if getgenv().AUTO_E then return end
 getgenv().AUTO_E = true
 
@@ -264,8 +265,6 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 		end)
 	end
 end)
-
-
 
 if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
 	getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
