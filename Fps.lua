@@ -1,4 +1,4 @@
-setfpscap(12)
+setfpscap(20)
 task.spawn(function()
     repeat task.wait() until game:IsLoaded()
     repeat task.wait() until game:GetService("Players").LocalPlayer
@@ -238,6 +238,7 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
         toggleBooster()
     end
 end)
+
 
 
 
