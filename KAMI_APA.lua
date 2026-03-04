@@ -275,9 +275,9 @@ if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
 	task.spawn(function()
 		while getgenv().__KAMI_APA_AUTO_LEFT_CLICK do
 			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,true,game,0)
-			task.wait(20)
+			task.wait(600)
 			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,false,game,0)
-			task.wait(60)
+			task.wait(600)
 		end
 	end)
 end
