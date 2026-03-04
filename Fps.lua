@@ -12,8 +12,13 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 getgenv().BlackScreenConfig = {
-    enabled = true,
-    toggleKey = Enum.KeyCode.F5
+    enableBlackOverlay = true,
+    overlayZIndex = 100000,
+    overlayTransparency = 0,
+    reduceGraphics = true,
+    minimalQualityLevel = 1,
+    toggleOverlayKey = Enum.KeyCode.F5,
+    toggleBoosterKey = Enum.KeyCode.F6
 }
 
 local overlayGui
@@ -194,5 +199,5 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 end)
 
-
+-- START
 createOverlay()
