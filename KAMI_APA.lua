@@ -18,7 +18,7 @@ getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 getgenv().GRAB_RADIUS = 10
 getgenv().TARGET_TIMEOUT = 30
-getgenv().HOLD_TIME = 3
+getgenv().HOLD_TIME = 5
 
 getgenv().TARGET_QUEUE = {}
 getgenv().currentTarget = nil
