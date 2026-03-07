@@ -27,7 +27,7 @@ getgenv().TARGET_SPAWN_TIME = {}
 
 getgenv().CHASE_DELAY = 1
 
-local holdingE = false
+local holdingE = true
 local holdStart = 0
 local MAX_HOLD_TIME = 6
 local RETRY_INTERVAL = 0.25
