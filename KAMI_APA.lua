@@ -16,7 +16,7 @@ getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
-getgenv().GRAB_RADIUS = 10
+getgenv().GRAB_RADIUS = 15
 getgenv().TARGET_TIMEOUT = 30
 getgenv().HOLD_TIME = 5
 
@@ -29,7 +29,7 @@ getgenv().CHASE_DELAY = 1
 
 local holdingE = false
 local holdStart = 1
-local MAX_HOLD_TIME = 6
+local MAX_HOLD_TIME = 12
 local RETRY_INTERVAL = 1
 
 local function setHoldE(state)
