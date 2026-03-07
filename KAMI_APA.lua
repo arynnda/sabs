@@ -27,10 +27,10 @@ getgenv().TARGET_SPAWN_TIME = {}
 
 getgenv().CHASE_DELAY = 1
 
-local holdingE = true
+local holdingE = false
 local holdStart = 0
 local MAX_HOLD_TIME = 6
-local RETRY_INTERVAL = 0.25
+local RETRY_INTERVAL = 1
 
 local function setHoldE(state)
 	if state and not holdingE then
