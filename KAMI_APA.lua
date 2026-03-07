@@ -249,3 +249,37 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 		end
 	end)
 end
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(30)
+print("AUTO E ACTIVE")
+
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Spin") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
+	end
+end)
+
+
+
+if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
+	getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
+
+	local VIM = game:GetService("VirtualInputManager")
+	task.wait(30)
+	local CLICK_POS = Vector2.new(476,412)
+
+	task.spawn(function()
+		while getgenv().__KAMI_APA_AUTO_LEFT_CLICK do
+			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,true,game,0)
+			task.wait(20)
+			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,false,game,0)
+			task.wait(60)
+		end
+	end)
+end
