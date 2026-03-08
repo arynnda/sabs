@@ -10,7 +10,6 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
-
 getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 getgenv().FORGOTTEN_UNITS = {}
@@ -19,9 +18,9 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
-getgenv().GRAB_RADIUS = 15
-getgenv().TARGET_TIMEOUT = 15
-getgenv().CHASE_DELAY = 1
+getgenv().GRAB_RADIUS = 10
+getgenv().TARGET_TIMEOUT = 10
+getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
 getgenv().currentTarget = nil
@@ -29,7 +28,6 @@ getgenv().targetStartTime = 0
 getgenv().TARGET_SPAWN_TIME = {}
 
 local RETRY_INTERVAL = 1
-
 
 local function getUnitID(m)
 	return m:GetAttribute("Index") or m.Name
@@ -74,7 +72,6 @@ local function isTarget(m)
 	return false
 end
 
-
 local function getTargetPart(model)
 
 	if model.PrimaryPart then
@@ -89,7 +86,6 @@ local function getTargetPart(model)
 
 end
 
-
 local function hasPurchasePrompt(model)
 
 	for _,d in ipairs(model:GetDescendants()) do
@@ -100,7 +96,6 @@ local function hasPurchasePrompt(model)
 
 	return false
 end
-
 
 local function addTarget(unit)
 
@@ -180,7 +175,6 @@ task.spawn(function()
 
 end)
 
-
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
 	if prompt.ActionText ~= "Purchase" then return end
@@ -197,7 +191,6 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	end)
 
 end)
-
 
 task.spawn(function()
 
@@ -240,9 +233,17 @@ task.spawn(function()
 					end
 
 					if dist <= getgenv().GRAB_RADIUS then
+
 						if not hasPurchasePrompt(tgt) then
+
+							local id = getUnitID(tgt)
+
+							getgenv().FORGOTTEN_UNITS[id] = true
+							getgenv().TARGET_SPAWN_TIME[tgt] = nil
 							getgenv().currentTarget = nil
+
 						end
+
 					end
 
 				end
@@ -264,7 +265,6 @@ task.spawn(function()
 	end
 
 end)
-
 
 local HOME_POS = Vector3.new(-435.4444274902344,-6.314190864562988,67.45307159423828)
 local RETURN_DISTANCE = 25
@@ -294,7 +294,6 @@ task.spawn(function()
 
 end)
 
-
 task.spawn(function()
 
 	while true do
@@ -321,7 +320,6 @@ task.spawn(function()
 	end
 
 end)
-
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
@@ -365,8 +363,6 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 		end)
 	end
 end)
-
-
 
 if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
 	getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
