@@ -10,7 +10,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or { "Tacorillo Crocodillo" }
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
@@ -18,7 +18,7 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
-getgenv().GRAB_RADIUS = 25
+getgenv().GRAB_RADIUS = 10
 getgenv().TARGET_TIMEOUT = 10
 getgenv().CHASE_DELAY = 0.5
 
@@ -182,7 +182,7 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	local model = prompt:FindFirstAncestorOfClass("Model")
 	if not model then return end
 
-	if not isTarget(model) then return end
+	if model ~= getgenv().currentTarget then return end
 
 	task.wait(0.05)
 
@@ -228,7 +228,7 @@ task.spawn(function()
 					local dist =
 						(hrp.Position - part.Position).Magnitude
 
-					if false then
+					if dist > 2 then
 						hum:MoveTo(part.Position)
 					end
 
@@ -266,8 +266,8 @@ task.spawn(function()
 
 end)
 
-local HOME_POS = Vector3.new(-411.04, -6.40, 234.16)
-local RETURN_DISTANCE = 5
+local HOME_POS = Vector3.new(-435.4444274902344,-6.314190864562988,67.45307159423828)
+local RETURN_DISTANCE = 25
 
 task.spawn(function()
 
