@@ -347,3 +347,47 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 	end)
 
 end
+
+if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
+	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
+
+	local function equipSpeedCoil()
+
+		local char = player.Character
+		if not char then return end
+
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if not backpack then return end
+
+		for _,tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
+				hum:EquipTool(tool)
+				break
+			end
+		end
+
+	end
+
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		equipSpeedCoil()
+	end)
+
+	if player:FindFirstChildOfClass("Backpack") then
+		player.Backpack.ChildAdded:Connect(function(tool)
+			task.wait(0.2)
+			equipSpeedCoil()
+		end)
+	end
+
+	task.spawn(function()
+		while true do
+			equipSpeedCoil()
+			task.wait(3)
+		end
+	end)
+
+end
