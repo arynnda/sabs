@@ -18,8 +18,8 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
-getgenv().GRAB_RADIUS = 10
-getgenv().TARGET_TIMEOUT = 10
+getgenv().GRAB_RADIUS = 30
+getgenv().TARGET_TIMEOUT = 15
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
