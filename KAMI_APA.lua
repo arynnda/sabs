@@ -18,8 +18,8 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 15
 
-getgenv().GRAB_RADIUS = 30
-getgenv().TARGET_TIMEOUT = 30
+getgenv().GRAB_RADIUS = 20
+getgenv().TARGET_TIMEOUT = 15
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
@@ -266,22 +266,8 @@ task.spawn(function()
 
 end)
 
-local HOME_POINTS = {
-	Vector3.new(-434.94287109375,-6.627068042755127,62.77268600463867),
-	Vector3.new(-423.8445739746094,-7.02985143661499,-45.90609550476074),
-	Vector3.new(-464.0876159667969,-7.02985143661499,-16.276538848876953),
-	Vector3.new(-517.69921875,-7.02985143661499,-37.940185546875),
-	Vector3.new(-467.0399169921875,-7.02985143661499,-74.67424774169922),
-	Vector3.new(-467.6302490234375,-7.02985143661499,-47.24452590942383),
-	Vector3.new(-371.7828063964844,-7.02985143661499,-86.44377899169922),
-	Vector3.new(-321.6971130371094,-7.029850959777832,-56.411224365234375),
-	Vector3.new(-318.7573547363281,-7.02985143661499,-30.5594482421875),
-	Vector3.new(-362.0663146972656,-7.02985143661499,-22.298091888427734),
-	Vector3.new(-367.6721496582031,-7.02985143661499,-44.765235900878906)
-}
-
-local RETURN_DISTANCE = 6
-local HOME_INDEX = 1
+local HOME_POS = Vector3.new(-435.4444274902344,-6.314190864562988,67.45307159423828)
+local RETURN_DISTANCE = 25
 
 task.spawn(function()
 
@@ -293,29 +279,16 @@ task.spawn(function()
 
 		if hum and root and hum.Health > 0 then
 
-			-- jika target muncul langsung berhenti HOME movement
-			if getgenv().currentTarget or #getgenv().TARGET_QUEUE > 0 then
-				task.wait(0.2)
-				continue
-			end
+			local target =
+				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
 
-			local target = HOME_POINTS[HOME_INDEX]
-
-			if target then
-
-				local movePos = Vector3.new(target.X,root.Position.Y,target.Z)
-
-				if (root.Position - movePos).Magnitude > RETURN_DISTANCE then
-					hum:MoveTo(movePos)
-				else
-					HOME_INDEX += 1
-				end
-
+			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+				hum:MoveTo(target)
 			end
 
 		end
 
-		task.wait(0.5)
+		task.wait(10)
 
 	end
 
