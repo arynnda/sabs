@@ -12,7 +12,7 @@ local PathfindingService = game:GetService("PathfindingService")
 local player = Players.LocalPlayer
 
 getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
-
+getgenv().AUTO_JUMP_ENABLED = true
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
@@ -25,6 +25,7 @@ getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
 getgenv().currentTarget = nil
+getgenv().AUTO_JUMP_ENABLED = true
 getgenv().targetStartTime = 0
 getgenv().TARGET_SPAWN_TIME = {}
 
@@ -210,6 +211,9 @@ task.spawn(function()
 		end
 
 		local tgt = getgenv().currentTarget
+			if tgt then
+	getgenv().AUTO_JUMP_ENABLED = false
+end
 
 		if tgt and tgt.Parent then
 
@@ -395,8 +399,15 @@ player.CharacterAdded:Connect(function(char)
 
 end)
 
+getgenv().AUTO_JUMP_ENABLED = true
+
 task.spawn(function()
 	while true do
+
+		if not getgenv().AUTO_JUMP_ENABLED then
+			task.wait(1)
+			continue
+		end
 
 		local char = player.Character
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -405,7 +416,7 @@ task.spawn(function()
 			hum:ChangeState(Enum.HumanoidStateType.Jumping)
 		end
 
-		task.wait(5)
+		task.wait(math.random(20,30))
 
 	end
 end)
