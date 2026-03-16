@@ -211,9 +211,14 @@ task.spawn(function()
 		end
 
 		local tgt = getgenv().currentTarget
+
+			local tgt = getgenv().currentTarget
+
 			if tgt then
-	getgenv().AUTO_JUMP_ENABLED = false
-end
+					getgenv().AUTO_JUMP_ENABLED = false
+			else
+					getgenv().AUTO_JUMP_ENABLED = true
+		end
 
 		if tgt and tgt.Parent then
 
