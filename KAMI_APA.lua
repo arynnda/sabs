@@ -295,6 +295,7 @@ task.spawn(function()
 
 end)
 
+
 -- SPEED COIL
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
@@ -403,6 +404,11 @@ task.spawn(function()
 				createScan(root.Position)
 			end
 
+			if scanIndex > #scanPoints then
+				createScan(root.Position)
+				scanIndex = 1
+			end
+
 			local point = scanPoints[scanIndex]
 
 			if point then
@@ -410,10 +416,6 @@ task.spawn(function()
 			end
 
 			scanIndex += 1
-
-			if scanIndex > #scanPoints then
-				createScan(root.Position)
-			end
 
 		end
 
