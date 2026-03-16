@@ -394,3 +394,21 @@ player.CharacterAdded:Connect(function(char)
 	createScan(root.Position)
 
 end)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+task.spawn(function()
+	while true do
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+		if hum and hum.Health > 0 then
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+
+		task.wait(1)
+
+	end
+end)
