@@ -7,6 +7,7 @@ repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local PathfindingService = game:GetService("PathfindingService")
 
 local player = Players.LocalPlayer
 
@@ -16,10 +17,10 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 15
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
-getgenv().GRAB_RADIUS = 30
-getgenv().TARGET_TIMEOUT = 20
+getgenv().GRAB_RADIUS = 20
+getgenv().TARGET_TIMEOUT = 30
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
@@ -266,72 +267,7 @@ task.spawn(function()
 
 end)
 
-task.wait(10)
-
-local TARGETS = {
-	Vector3.new(-348.0880126953125, -7.00197696685791, 200.22195434570312),
-	Vector3.new(-317.9670104980469, -7.00197696685791, 173.2742462158203),
-	Vector3.new(-351.6064453125, -7.00197696685791, 140.5575408935547),
-	Vector3.new(-473.55859375, -7.00197696685791, 190.71792602539062),
-	Vector3.new(-508.02239990234375, -7.001977443695068, 172.8726348876953),
-	Vector3.new(-468.2983093261719, -7.001977443695068, 143.89483642578125),
-	Vector3.new(-467.0907287597656, -7.00197696685791, 81.65995788574219),
-	Vector3.new(-509.8305969238281, -7.001977443695068, 60.71058654785156),
-	Vector3.new(-472.07244873046875, -7.001977443695068, 36.392723083496094),
-	Vector3.new(-469.87548828125, -7.00197696685791, -15.740150451660156),
-	Vector3.new(-344.73223876953125, -7.00197696685791, -17.095312118530273),
-	Vector3.new(-348.09686279296875, -7.00197696685791, 38.18037033081055),
-	Vector3.new(-303.9809875488281, -7.00197696685791, 66.93953704833984),
-	Vector3.new(-350.02508544921875, -7.00197696685791, 80.84918975830078),
-	Vector3.new(-351.5947570800781, -7.00197696685791, -22.45192527770996),
-	Vector3.new(-313.3937072753906, -7.0019755363464355, -41.653873443603516),
-	Vector3.new(-348.0111083984375, -7.00197696685791, -75.82738494873047),
-	Vector3.new(-478.1455383300781, -7.00197696685791, -26.706602096557617),
-	Vector3.new(-518.7659301757812, -7.00197696685791, -46.07236099243164),
-	Vector3.new(-471.6510009765625, -7.00197696685791, -69.66283416748047),
-	Vector3.new(-465.0112609863281, -7.001976490020752, -129.6852264404297),
-	Vector3.new(-346.22027587890625, -7.00197696685791, -123.08599853515625),
-	Vector3.new(-434.94287109375,-6.627068042755127,62.77268600463867),
-}
-
-local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
-local TARGET_DELAY = 0.4
-local LOOP_IDLE = 30
-
-local function getChar()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
-end
-
-task.spawn(function()
-
-while true do
-	local humanoid, root = getChar()
-
-	for i, target in ipairs(TARGETS) do
-		if humanoid.Health <= 0 then break end
-
-		print("🎯 Target", i)
-
-		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-		humanoid:MoveTo(goal)
-
-		local start = tick()
-		while tick() - start < MOVE_TIMEOUT do
-			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-				break
-			end
-			task.wait(0.1)
-		end
-
-		task.wait(TARGET_DELAY)
-	end
-
-	task.wait(LOOP_IDLE)
-end
-
-end)
+-- AUTO INPUT LOOP
 task.spawn(function()
 
 	while true do
@@ -359,6 +295,7 @@ task.spawn(function()
 
 end)
 
+-- AUTO RESET
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
@@ -386,35 +323,139 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 end
 
-if getgenv().AUTO_E then return end
-getgenv().AUTO_E = true
+-- SPEED COIL
+if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
+	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.wait(0.1)
-print("AUTO E ACTIVE")
+	local function equipSpeedCoil()
 
-ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Spin") then
-		task.wait(0.1)
-		pcall(function()
-			fireproximityprompt(prompt)
-		end)
+		local char = player.Character
+		if not char then return end
+
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if not backpack then return end
+
+		for _,tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
+				hum:EquipTool(tool)
+				break
+			end
+		end
+
 	end
-end)
 
-if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
-	getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
-
-	local VIM = game:GetService("VirtualInputManager")
-	task.wait(30)
-	local CLICK_POS = Vector2.new(476,412)
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		equipSpeedCoil()
+	end)
 
 	task.spawn(function()
-		while getgenv().__KAMI_APA_AUTO_LEFT_CLICK do
-			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,true,game,0)
-			task.wait(20)
-			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,false,game,0)
-			task.wait(60)
+		while true do
+			equipSpeedCoil()
+			task.wait(3)
 		end
 	end)
+
 end
+
+-- EXPLORER SCANNER (FIXED)
+local scanPoints = {}
+local scanIndex = 1
+local STEP = 30
+local SCAN_RADIUS = 800
+
+local function shuffle(t)
+	for i = #t,2,-1 do
+		local j = math.random(i)
+		t[i],t[j] = t[j],t[i]
+	end
+end
+
+local function createScan(center)
+
+	scanPoints = {}
+	scanIndex = 1
+
+	for i=1,120 do
+		local x = center.X + math.random(-SCAN_RADIUS,SCAN_RADIUS)
+		local z = center.Z + math.random(-SCAN_RADIUS,SCAN_RADIUS)
+		table.insert(scanPoints,Vector3.new(x,center.Y,z))
+	end
+
+	shuffle(scanPoints)
+
+end
+
+local function moveToPoint(hum,root,pos)
+
+	local path = PathfindingService:CreatePath()
+
+	local ok = pcall(function()
+		path:ComputeAsync(root.Position,pos)
+	end)
+
+	if not ok or path.Status ~= Enum.PathStatus.Success then return end
+
+	for _,waypoint in ipairs(path:GetWaypoints()) do
+
+		if getgenv().currentTarget then
+			return
+		end
+
+		hum:MoveTo(waypoint.Position)
+		hum.MoveToFinished:Wait()
+
+	end
+
+end
+
+task.spawn(function()
+
+	while true do
+
+		if getgenv().currentTarget then
+			task.wait(0.2)
+			continue
+		end
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum and root and hum.Health > 0 then
+
+			if #scanPoints == 0 then
+				createScan(root.Position)
+			end
+
+			local point = scanPoints[scanIndex]
+
+			if point then
+				moveToPoint(hum,root,point)
+			end
+
+			scanIndex += 1
+
+			if scanIndex > #scanPoints then
+				createScan(root.Position)
+			end
+
+		end
+
+		task.wait(0.05)
+
+	end
+
+end)
+
+player.CharacterAdded:Connect(function(char)
+
+	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
+
+	local root = char.HumanoidRootPart
+	createScan(root.Position)
+
+end)
