@@ -313,7 +313,7 @@ local function createScan(center)
 	scanPoints = {}
 	scanIndex = 1
 
-	for i=1,120 do
+	for i=1,180 do
 		local x = center.X + math.random(-SCAN_RADIUS,SCAN_RADIUS)
 		local z = center.Z + math.random(-SCAN_RADIUS,SCAN_RADIUS)
 		table.insert(scanPoints,Vector3.new(x,center.Y,z))
@@ -380,7 +380,7 @@ task.spawn(function()
 
 		end
 
-		task.wait(1)
+		task.wait(0.1)
 
 	end
 
@@ -394,9 +394,6 @@ player.CharacterAdded:Connect(function(char)
 	createScan(root.Position)
 
 end)
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 
 task.spawn(function()
 	while true do
