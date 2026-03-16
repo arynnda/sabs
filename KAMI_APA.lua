@@ -380,7 +380,7 @@ task.spawn(function()
 
 		end
 
-		task.wait(0.1)
+		task.wait(0.05)
 
 	end
 
@@ -405,7 +405,7 @@ task.spawn(function()
 			hum:ChangeState(Enum.HumanoidStateType.Jumping)
 		end
 
-		task.wait(1)
+		task.wait(5)
 
 	end
 end)
