@@ -7,6 +7,7 @@ repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local PathfindingService = game:GetService("PathfindingService")
 
 local player = Players.LocalPlayer
 
@@ -16,10 +17,10 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 15
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
-getgenv().GRAB_RADIUS = 25
-getgenv().TARGET_TIMEOUT = 50
+getgenv().GRAB_RADIUS = 20
+getgenv().TARGET_TIMEOUT = 30
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
@@ -182,7 +183,7 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	local model = prompt:FindFirstAncestorOfClass("Model")
 	if not model then return end
 
-	if not isTarget(model) then return end
+	if model ~= getgenv().currentTarget then return end
 
 	task.wait(0.05)
 
@@ -228,7 +229,7 @@ task.spawn(function()
 					local dist =
 						(hrp.Position - part.Position).Magnitude
 
-					if false then
+					if dist > 2 then
 						hum:MoveTo(part.Position)
 					end
 
@@ -266,34 +267,7 @@ task.spawn(function()
 
 end)
 
-local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
-local RETURN_DISTANCE = 4
-
-task.spawn(function()
-
-	while true do
-
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
-
-		if hum and root and hum.Health > 0 then
-
-			local target =
-				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
-
-			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
-				hum:MoveTo(target)
-			end
-
-		end
-
-		task.wait(0.5)
-
-	end
-
-end)
-
+-- AUTO INPUT LOOP
 task.spawn(function()
 
 	while true do
@@ -321,32 +295,6 @@ task.spawn(function()
 
 end)
 
-if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
-
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 360
-
-	task.spawn(function()
-
-		while true do
-
-			task.wait(AUTO_RESET_DELAY)
-
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-
-		end
-
-	end)
-
-end
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
@@ -376,13 +324,6 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 		equipSpeedCoil()
 	end)
 
-	if player:FindFirstChildOfClass("Backpack") then
-		player.Backpack.ChildAdded:Connect(function(tool)
-			task.wait(0.2)
-			equipSpeedCoil()
-		end)
-	end
-
 	task.spawn(function()
 		while true do
 			equipSpeedCoil()
@@ -391,3 +332,102 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	end)
 
 end
+
+local scanPoints = {}
+local scanIndex = 1
+local STEP = 30
+local SCAN_RADIUS = 800
+
+local function shuffle(t)
+	for i = #t,2,-1 do
+		local j = math.random(i)
+		t[i],t[j] = t[j],t[i]
+	end
+end
+
+local function createScan(center)
+
+	scanPoints = {}
+	scanIndex = 1
+
+	for i=1,120 do
+		local x = center.X + math.random(-SCAN_RADIUS,SCAN_RADIUS)
+		local z = center.Z + math.random(-SCAN_RADIUS,SCAN_RADIUS)
+		table.insert(scanPoints,Vector3.new(x,center.Y,z))
+	end
+
+	shuffle(scanPoints)
+
+end
+
+local function moveToPoint(hum,root,pos)
+
+	local path = PathfindingService:CreatePath()
+
+	local ok = pcall(function()
+		path:ComputeAsync(root.Position,pos)
+	end)
+
+	if not ok or path.Status ~= Enum.PathStatus.Success then return end
+
+	for _,waypoint in ipairs(path:GetWaypoints()) do
+
+		if getgenv().currentTarget then
+			return
+		end
+
+		hum:MoveTo(waypoint.Position)
+		hum.MoveToFinished:Wait()
+
+	end
+
+end
+
+task.spawn(function()
+
+	while true do
+
+		if getgenv().currentTarget then
+			task.wait(0.2)
+			continue
+		end
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum and root and hum.Health > 0 then
+
+			if #scanPoints == 0 then
+				createScan(root.Position)
+			end
+
+			if scanIndex > #scanPoints then
+				createScan(root.Position)
+				scanIndex = 1
+			end
+
+			local point = scanPoints[scanIndex]
+
+			if point then
+				moveToPoint(hum,root,point)
+			end
+
+			scanIndex += 1
+
+		end
+
+		task.wait(0.05)
+
+	end
+
+end)
+
+player.CharacterAdded:Connect(function(char)
+
+	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
+
+	local root = char.HumanoidRootPart
+	createScan(root.Position)
+
+end)
