@@ -188,11 +188,6 @@ task.spawn(function()
 
 	while true do
 
-		if not REACHED_FINAL_HOME then
-			task.wait(1)
-			continue
-		end
-
 		if not getgenv().currentTarget then
 
 			repeat
