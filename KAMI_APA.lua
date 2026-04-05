@@ -11,13 +11,17 @@ local PathfindingService = game:GetService("PathfindingService")
 
 local player = Players.LocalPlayer
 local currentCharacter = player.Character or player.CharacterAdded:Wait()
+local char = currentCharacter
 
+
+player.CharacterAdded:Connect(function(c)
+	currentCharacter = c
+end)
 
 local STUCK_TIME = 2
 local STUCK_DISTANCE = 5
 local TELEPORT_DISTANCE = 120
 
--- ================= TARGET CONFIG =================
 getgenv().TARGET_LIST = getgenv().TARGET_LIST or { }
 
 getgenv().FORGOTTEN_UNITS = {}
@@ -35,7 +39,6 @@ getgenv().targetStartTime = 0
 getgenv().TARGET_SPAWN_TIME = {}
 
 local RETRY_INTERVAL = 1
-
 
 local lastPos = nil
 local lastMoveTime = tick()
@@ -95,6 +98,10 @@ local function smartMove(hum, root, targetPos)
 end
 
 
+getgenv().resetPath = function()
+	lastPos = nil
+	lastMoveTime = tick()
+end
 
 local function getUnitID(m)
 	return m:GetAttribute("Index") or m.Name
@@ -174,7 +181,6 @@ workspace.DescendantAdded:Connect(function(o)
 	end
 end)
 
-
 local lastCash
 local cashValue
 
@@ -222,7 +228,6 @@ task.spawn(function()
 	setupCashWatcher()
 end)
 
-
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
 	if prompt.ActionText ~= "Purchase" then return end
@@ -240,6 +245,31 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 
 end)
 
+
+task.spawn(function()
+	while true do
+		task.wait(3)
+
+		local char = currentCharacter
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum and root and hum.Health > 0 then
+			if isStuck(root) then
+				if getgenv().currentTarget then
+					local part = getTargetPart(getgenv().currentTarget)
+					if part then
+						smartMove(hum, root, part.Position)
+					end
+				else
+					if scanPoints and scanPoints[scanIndex] then
+						smartMove(hum, root, scanPoints[scanIndex])
+					end
+				end
+			end
+		end
+	end
+end)
 
 task.spawn(function()
 	while true do
@@ -296,9 +326,7 @@ task.spawn(function()
 	end
 end)
 
-
 task.spawn(function()
-
 	while true do
 
 		local char = currentCharacter
@@ -319,9 +347,7 @@ task.spawn(function()
 		end
 
 		task.wait(360)
-
 	end
-
 end)
 
 
@@ -329,7 +355,6 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
 	local function equipSpeedCoil()
-
 		local char = currentCharacter
 		if not char then return end
 
@@ -345,10 +370,10 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 				break
 			end
 		end
-
 	end
 
-	player.CharacterAdded:Connect(function()
+	player.CharacterAdded:Connect(function(char)
+		currentCharacter = char
 		task.wait(1)
 		equipSpeedCoil()
 	end)
@@ -359,7 +384,6 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 			task.wait(3)
 		end
 	end)
-
 end
 
 
@@ -388,7 +412,6 @@ local function createScan(center)
 end
 
 local function moveToPoint(hum,root,pos)
-
 	local path = PathfindingService:CreatePath()
 
 	local ok = pcall(function()
@@ -404,6 +427,41 @@ local function moveToPoint(hum,root,pos)
 	end
 end
 
+
+local lastPos = nil
+local lastMoveTime = tick()
+
+getgenv().resetPath = function()
+	lastPos = nil
+	lastMoveTime = tick()
+end
+
+
+player.CharacterAdded:Connect(function(char)
+
+	currentCharacter = char
+
+	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
+
+	getgenv().currentTarget = nil
+
+
+	scanPoints = {}
+	scanIndex = 1
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if root then
+		createScan(root.Position)
+	end
+
+
+	if getgenv().resetPath then
+		getgenv().resetPath()
+	end
+
+end)
+
+
 task.spawn(function()
 	while true do
 
@@ -416,7 +474,12 @@ task.spawn(function()
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
 		local root = char and char:FindFirstChild("HumanoidRootPart")
 
-		if hum and root and hum.Health > 0 then
+		if not char or not hum or not root then
+			task.wait(1)
+			continue
+		end
+
+		if hum.Health > 0 then
 
 			if #scanPoints == 0 then
 				createScan(root.Position)
@@ -441,7 +504,6 @@ task.spawn(function()
 	end
 end)
 
-
 player.CharacterAdded:Connect(function(char)
 
 	currentCharacter = char
@@ -449,6 +511,10 @@ player.CharacterAdded:Connect(function(char)
 	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
 
 	getgenv().currentTarget = nil
+
+	if getgenv().resetPath then
+		getgenv().resetPath()
+	end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if root then
