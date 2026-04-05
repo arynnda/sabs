@@ -350,46 +350,9 @@ task.spawn(function()
 	end
 end)
 
-
-if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
-	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
-
-	local function equipSpeedCoil()
-		local char = currentCharacter
-		if not char then return end
-
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if not hum then return end
-
-		local backpack = player:FindFirstChildOfClass("Backpack")
-		if not backpack then return end
-
-		for _,tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
-				hum:EquipTool(tool)
-				break
-			end
-		end
-	end
-
-	player.CharacterAdded:Connect(function(char)
-		currentCharacter = char
-		task.wait(1)
-		equipSpeedCoil()
-	end)
-
-	task.spawn(function()
-		while true do
-			equipSpeedCoil()
-			task.wait(3)
-		end
-	end)
-end
-
-
 local scanPoints = {}
 local scanIndex = 1
-local SCAN_RADIUS = 800
+local SCAN_RADIUS = 700
 
 local function shuffle(t)
 	for i = #t,2,-1 do
@@ -402,7 +365,7 @@ local function createScan(center)
 	scanPoints = {}
 	scanIndex = 1
 
-	for i=1,200 do
+	for i=1,120 do
 		local x = center.X + math.random(-SCAN_RADIUS,SCAN_RADIUS)
 		local z = center.Z + math.random(-SCAN_RADIUS,SCAN_RADIUS)
 		table.insert(scanPoints,Vector3.new(x,center.Y,z))
