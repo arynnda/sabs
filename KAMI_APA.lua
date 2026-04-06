@@ -7,30 +7,19 @@ repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ProximityPromptService = game:GetService("ProximityPromptService")
-local PathfindingService = game:GetService("PathfindingService")
 
 local player = Players.LocalPlayer
-local currentCharacter = player.Character or player.CharacterAdded:Wait()
-local char = currentCharacter
 
-
-player.CharacterAdded:Connect(function(c)
-	currentCharacter = c
-end)
-
-local STUCK_TIME = 2
-local STUCK_DISTANCE = 5
-local TELEPORT_DISTANCE = 120
-
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or { }
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
-getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
-getgenv().GRAB_RADIUS = 20
-getgenv().TARGET_TIMEOUT = 30
+getgenv().MAX_SPAWN_BEFORE_FORGET = 30
+
+getgenv().GRAB_RADIUS = 25
+getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
@@ -40,68 +29,25 @@ getgenv().TARGET_SPAWN_TIME = {}
 
 local RETRY_INTERVAL = 1
 
-local lastPos = nil
-local lastMoveTime = tick()
+-- 🔥 HOME POSITION (1 → 2 → 3 → STOP)
+local HOME_POS_LIST = {
+	Vector3.new(-387.46514892578125, -6.8798508644104, 2.1855247020721436),
+	Vector3.new(-409.2247314453125, -6.501975059509277, 64.8619155883789),
+	Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+}
 
-local function isStuck(root)
-	if not root then return false end
-	
-	if not lastPos then
-		lastPos = root.Position
-		lastMoveTime = tick()
-		return false
-	end
-	
-	local dist = (root.Position - lastPos).Magnitude
-	
-	if dist > STUCK_DISTANCE then
-		lastPos = root.Position
-		lastMoveTime = tick()
-		return false
-	end
-	
-	if tick() - lastMoveTime >= STUCK_TIME then
-		return true
-	end
-	
-	return false
-end
+local CURRENT_HOME_INDEX = 1
+local RETURN_DISTANCE = 5
 
-local function smartMove(hum, root, targetPos)
-	if not hum or not root then return end
+-- 🔥 ANTI TERPENTAL
+local REACHED_FINAL_HOME = false
+local FINAL_HOME_RADIUS = 8
 
-	hum:MoveTo(targetPos)
-
-	task.delay(1, function()
-		if not hum or hum.Health <= 0 then return end
-
-		if isStuck(root) then
-			local path = PathfindingService:CreatePath()
-
-			local ok = pcall(function()
-				path:ComputeAsync(root.Position, targetPos)
-			end)
-
-			if ok and path.Status == Enum.PathStatus.Success then
-				for _,waypoint in ipairs(path:GetWaypoints()) do
-					if getgenv().currentTarget == nil then return end
-					hum:MoveTo(waypoint.Position)
-					hum.MoveToFinished:Wait()
-				end
-			else
-				if (root.Position - targetPos).Magnitude <= TELEPORT_DISTANCE then
-					root.CFrame = CFrame.new(targetPos + Vector3.new(0,3,0))
-				end
-			end
-		end
-	end)
-end
-
-
-getgenv().resetPath = function()
-	lastPos = nil
-	lastMoveTime = tick()
-end
+player.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	CURRENT_HOME_INDEX = 1
+	REACHED_FINAL_HOME = false
+end)
 
 local function getUnitID(m)
 	return m:GetAttribute("Index") or m.Name
@@ -115,6 +61,7 @@ local function canProcessUnit(m)
 	getgenv().SEEN_UNIT_INSTANCES[m] = true
 
 	local id = getUnitID(m)
+
 	getgenv().UNIT_SPAWN_COUNT[id] =
 		(getgenv().UNIT_SPAWN_COUNT[id] or 0) + 1
 
@@ -144,9 +91,14 @@ local function isTarget(m)
 end
 
 local function getTargetPart(model)
-	if model.PrimaryPart then return model.PrimaryPart end
+	if model.PrimaryPart then
+		return model.PrimaryPart
+	end
+
 	for _,d in ipairs(model:GetDescendants()) do
-		if d:IsA("BasePart") then return d end
+		if d:IsA("BasePart") then
+			return d
+		end
 	end
 end
 
@@ -185,7 +137,6 @@ local lastCash
 local cashValue
 
 local function setupCashWatcher()
-
 	local stats = player:FindFirstChild("leaderstats")
 	if not stats then return end
 
@@ -206,21 +157,15 @@ local function setupCashWatcher()
 		end
 
 		if cashValue.Value < lastCash then
-
 			local tgt = getgenv().currentTarget
-
 			if tgt then
 				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
 			end
-
 			getgenv().currentTarget = nil
-
 		end
 
 		lastCash = cashValue.Value
-
 	end)
-
 end
 
 task.spawn(function()
@@ -229,89 +174,80 @@ task.spawn(function()
 end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
-
 	if prompt.ActionText ~= "Purchase" then return end
 
 	local model = prompt:FindFirstAncestorOfClass("Model")
 	if not model then return end
-
-	if model ~= getgenv().currentTarget then return end
+	if not isTarget(model) then return end
 
 	task.wait(0.05)
-
 	pcall(function()
 		fireproximityprompt(prompt)
 	end)
-
 end)
 
-
+-- 🔥 TARGET SYSTEM (AKTIF HANYA SETELAH SAMPAI HOME)
 task.spawn(function()
+
 	while true do
-		task.wait(3)
 
-		local char = currentCharacter
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
-
-		if hum and root and hum.Health > 0 then
-			if isStuck(root) then
-				if getgenv().currentTarget then
-					local part = getTargetPart(getgenv().currentTarget)
-					if part then
-						smartMove(hum, root, part.Position)
-					end
-				else
-					if scanPoints and scanPoints[scanIndex] then
-						smartMove(hum, root, scanPoints[scanIndex])
-					end
-				end
-			end
+		if not REACHED_FINAL_HOME then
+			task.wait(1)
+			continue
 		end
-	end
-end)
-
-task.spawn(function()
-	while true do
 
 		if not getgenv().currentTarget then
+
 			repeat
-				getgenv().currentTarget = table.remove(getgenv().TARGET_QUEUE,1)
-			until not getgenv().currentTarget or getgenv().currentTarget.Parent
+				getgenv().currentTarget =
+					table.remove(getgenv().TARGET_QUEUE,1)
+			until not getgenv().currentTarget
+				or getgenv().currentTarget.Parent
 
 			getgenv().targetStartTime = tick()
+
 		end
 
 		local tgt = getgenv().currentTarget
 
 		if tgt and tgt.Parent then
 
-			local char = currentCharacter
+			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 			local part = getTargetPart(tgt)
 
 			if hum and hrp and part then
 
-				local spawnTime = getgenv().TARGET_SPAWN_TIME[tgt]
+				local spawnTime =
+					getgenv().TARGET_SPAWN_TIME[tgt]
 
-				if not spawnTime or tick() - spawnTime >= getgenv().CHASE_DELAY then
+				if not spawnTime or
+					tick() - spawnTime >= getgenv().CHASE_DELAY then
 
-					local dist = (hrp.Position - part.Position).Magnitude
+					local dist =
+						(hrp.Position - part.Position).Magnitude
 
-					if dist > 2 then
-						smartMove(hum, hrp, part.Position)
+					if false then
+						hum:MoveTo(part.Position)
 					end
 
 					if dist <= getgenv().GRAB_RADIUS then
+
 						if not hasPurchasePrompt(tgt) then
+
 							local id = getUnitID(tgt)
+
 							getgenv().FORGOTTEN_UNITS[id] = true
 							getgenv().TARGET_SPAWN_TIME[tgt] = nil
 							getgenv().currentTarget = nil
+
 						end
+
 					end
+
 				end
+
 			end
 
 			if tick() - getgenv().targetStartTime >= getgenv().TARGET_TIMEOUT then
@@ -319,171 +255,153 @@ task.spawn(function()
 			end
 
 		else
+
 			getgenv().currentTarget = nil
+
 		end
 
 		task.wait(RETRY_INTERVAL)
+
 	end
+
+end)
+
+task.spawn(function()
+
+	while true do
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum and root and hum.Health > 0 then
+
+			local targetPos = HOME_POS_LIST[CURRENT_HOME_INDEX]
+
+			if targetPos then
+
+				local target = Vector3.new(targetPos.X, root.Position.Y, targetPos.Z)
+				local dist = (root.Position - target).Magnitude
+
+				if not REACHED_FINAL_HOME then
+					getgenv().currentTarget = nil
+				end
+
+				if REACHED_FINAL_HOME then
+					if dist > FINAL_HOME_RADIUS then
+						hum:MoveTo(target)
+					end
+				else
+					if dist >= RETURN_DISTANCE then
+						hum:MoveTo(target)
+					else
+						if CURRENT_HOME_INDEX < #HOME_POS_LIST then
+							CURRENT_HOME_INDEX += 1
+						else
+							REACHED_FINAL_HOME = true
+						end
+					end
+				end
+
+			end
+
+		end
+
+		task.wait(0.5)
+	end
+
 end)
 
 task.spawn(function()
 	while true do
-
-		local char = currentCharacter
+		local char = player.Character
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
 
 		if hum and hum.Health > 0 then
-
 			for _=1,2 do
 				VirtualInputManager:SendKeyEvent(true,Enum.KeyCode.I,false,game)
 				VirtualInputManager:SendKeyEvent(false,Enum.KeyCode.I,false,game)
 			end
-
 			for _=1,2 do
 				VirtualInputManager:SendKeyEvent(true,Enum.KeyCode.O,false,game)
 				VirtualInputManager:SendKeyEvent(false,Enum.KeyCode.O,false,game)
 			end
-
 		end
 
 		task.wait(360)
 	end
 end)
 
-local scanPoints = {}
-local scanIndex = 1
-local SCAN_RADIUS = 700
+if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
+	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
-local function shuffle(t)
-	for i = #t,2,-1 do
-		local j = math.random(i)
-		t[i],t[j] = t[j],t[i]
+	local function equipSpeedCoil()
+		local char = player.Character
+		if not char then return end
+
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if not backpack then return end
+
+		for _,tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
+				hum:EquipTool(tool)
+				break
+			end
+		end
 	end
-end
 
-local function createScan(center)
-	scanPoints = {}
-	scanIndex = 1
-
-	for i=1,120 do
-		local x = center.X + math.random(-SCAN_RADIUS,SCAN_RADIUS)
-		local z = center.Z + math.random(-SCAN_RADIUS,SCAN_RADIUS)
-		table.insert(scanPoints,Vector3.new(x,center.Y,z))
-	end
-
-	shuffle(scanPoints)
-end
-
-local function moveToPoint(hum,root,pos)
-	local path = PathfindingService:CreatePath()
-
-	local ok = pcall(function()
-		path:ComputeAsync(root.Position,pos)
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		equipSpeedCoil()
 	end)
 
-	if not ok or path.Status ~= Enum.PathStatus.Success then return end
-
-	for _,waypoint in ipairs(path:GetWaypoints()) do
-		if getgenv().currentTarget then return end
-		hum:MoveTo(waypoint.Position)
-		hum.MoveToFinished:Wait()
-	end
-end
-
-
-local lastPos = nil
-local lastMoveTime = tick()
-
-getgenv().resetPath = function()
-	lastPos = nil
-	lastMoveTime = tick()
-end
-
-
-player.CharacterAdded:Connect(function(char)
-
-	currentCharacter = char
-
-	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
-
-	getgenv().currentTarget = nil
-
-
-	scanPoints = {}
-	scanIndex = 1
-
-	local root = char:FindFirstChild("HumanoidRootPart")
-	if root then
-		createScan(root.Position)
-	end
-
-
-	if getgenv().resetPath then
-		getgenv().resetPath()
-	end
-
-end)
-
-
-task.spawn(function()
-	while true do
-
-		if getgenv().currentTarget then
+	if player:FindFirstChildOfClass("Backpack") then
+		player.Backpack.ChildAdded:Connect(function()
 			task.wait(0.2)
-			continue
+			equipSpeedCoil()
+		end)
+	end
+
+	task.spawn(function()
+		while true do
+			equipSpeedCoil()
+			task.wait(0)
 		end
+	end)
+end
 
-		local char = currentCharacter
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
 
-		if not char or not hum or not root then
-			task.wait(1)
-			continue
-		end
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(0)
+print("AUTO E ACTIVE")
 
-		if hum.Health > 0 then
-
-			if #scanPoints == 0 then
-				createScan(root.Position)
-			end
-
-			if scanIndex > #scanPoints then
-				createScan(root.Position)
-				scanIndex = 1
-			end
-
-			local point = scanPoints[scanIndex]
-
-			if point then
-				moveToPoint(hum,root,point)
-			end
-
-			scanIndex += 1
-
-		end
-
-		task.wait(3)
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Spawn" or string.find(prompt.ObjectText or "", "Spin") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
 	end
 end)
 
-player.CharacterAdded:Connect(function(char)
+if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
+	getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
 
-	currentCharacter = char
+	local VIM = game:GetService("VirtualInputManager")
+	task.wait(10)
+	local CLICK_POS = Vector2.new(482,388)
 
-	repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
-
-	getgenv().currentTarget = nil
-
-	if getgenv().resetPath then
-		getgenv().resetPath()
-	end
-
-	local root = char:FindFirstChild("HumanoidRootPart")
-	if root then
-		createScan(root.Position)
-		lastPos = nil
-		lastMoveTime = tick()
-	end
-
-end)
+	task.spawn(function()
+		while getgenv().__KAMI_APA_AUTO_LEFT_CLICK do
+			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,true,game,0)
+			task.wait(20)
+			VIM:SendMouseButtonEvent(CLICK_POS.X,CLICK_POS.Y,0,false,game,0)
+			task.wait(20)
+		end
+	end)
+end
