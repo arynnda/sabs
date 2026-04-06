@@ -29,7 +29,7 @@ getgenv().TARGET_SPAWN_TIME = {}
 
 local RETRY_INTERVAL = 1
 
--- 🔥 HOME POSITION (1 → 2 → 3 → STOP)
+
 local HOME_POS_LIST = {
 	Vector3.new(-387.46514892578125, -6.8798508644104, 2.1855247020721436),
 	Vector3.new(-409.2247314453125, -6.501975059509277, 64.8619155883789)
@@ -38,7 +38,7 @@ local HOME_POS_LIST = {
 local CURRENT_HOME_INDEX = 1
 local RETURN_DISTANCE = 5
 
--- 🔥 ANTI TERPENTAL
+
 local REACHED_FINAL_HOME = false
 local FINAL_HOME_RADIUS = 8
 
@@ -185,7 +185,7 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	end)
 end)
 
--- 🔥 TARGET SYSTEM (AKTIF HANYA SETELAH SAMPAI HOME)
+
 task.spawn(function()
 
 	while true do
