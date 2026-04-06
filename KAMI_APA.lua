@@ -352,7 +352,7 @@ end)
 
 local scanPoints = {}
 local scanIndex = 1
-local SCAN_RADIUS = 700
+local SCAN_RADIUS = 800
 
 local function shuffle(t)
 	for i = #t,2,-1 do
