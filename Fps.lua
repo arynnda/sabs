@@ -1,4 +1,4 @@
-setfpscap(7)
+setfpscap(5)
 task.spawn(function()
     repeat task.wait() until game:IsLoaded()
     repeat task.wait() until game:GetService("Players").LocalPlayer
