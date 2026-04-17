@@ -1,3 +1,4 @@
+task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -5,7 +6,6 @@ task.wait(5)
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
@@ -16,10 +16,10 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 15
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
-getgenv().GRAB_RADIUS = 30
-getgenv().TARGET_TIMEOUT = 20
+getgenv().GRAB_RADIUS = 25
+getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
@@ -182,7 +182,7 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	local model = prompt:FindFirstAncestorOfClass("Model")
 	if not model then return end
 
-	if model ~= getgenv().currentTarget then return end
+	if not isTarget(model) then return end
 
 	task.wait(0.05)
 
@@ -228,7 +228,7 @@ task.spawn(function()
 					local dist =
 						(hrp.Position - part.Position).Magnitude
 
-					if dist > 2 then
+					if false then
 						hum:MoveTo(part.Position)
 					end
 
@@ -332,48 +332,10 @@ while true do
 end
 
 end)
-task.spawn(function()
-
-	while true do
-
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-		if hum and hum.Health > 0 then
-
-
-			local function pressKey(key)
-				VirtualInputManager:SendKeyEvent(true, key, false, game)
-				task.wait(math.random(10,25)/100) -- 0.1 - 0.25 detik
-				VirtualInputManager:SendKeyEvent(false, key, false, game)
-				task.wait(math.random(20,50)/100) -- jeda antar input
-			end
-
-
-			for _ = 1, 2 do
-				pressKey(Enum.KeyCode.I)
-			end
-
-			task.wait(math.random(1,2)) -- jeda antar tombol
-
-
-			for _ = 1, 2 do
-				pressKey(Enum.KeyCode.O)
-			end
-
-		end
-
-		-- delay utama (dibikin random biar ga kaku)
-		task.wait(math.random(300,420)) -- 5 - 7 menit
-
-	end
-
-end)
-
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 300
+	local AUTO_RESET_DELAY = 150
 
 	task.spawn(function()
 
@@ -401,6 +363,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
 	local function equipSpeedCoil()
+
 		local char = player.Character
 		if not char then return end
 
@@ -416,6 +379,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 				break
 			end
 		end
+
 	end
 
 	player.CharacterAdded:Connect(function()
@@ -424,7 +388,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	end)
 
 	if player:FindFirstChildOfClass("Backpack") then
-		player.Backpack.ChildAdded:Connect(function()
+		player.Backpack.ChildAdded:Connect(function(tool)
 			task.wait(0.2)
 			equipSpeedCoil()
 		end)
@@ -433,7 +397,100 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	task.spawn(function()
 		while true do
 			equipSpeedCoil()
-			task.wait(0)
+			task.wait(1)
+		end
+	end)
+
+end
+
+if not getgenv().__KAMI_APA_ANTI_AFK then
+	getgenv().__KAMI_APA_ANTI_AFK = true
+
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+
+
+	task.wait(10)
+
+
+	local function rand(a,b)
+		return math.random(a,b)
+	end
+
+	task.spawn(function()
+		while getgenv().__KAMI_APA_ANTI_AFK do
+
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+			if hum and hrp and hum.Health > 0 then
+
+
+				local moveDir = Vector3.new(
+					math.random(-1,1),
+					0,
+					math.random(-1,1)
+				)
+
+				hum:Move(moveDir, true)
+
+				task.wait(rand(1,3))
+
+				hum:Move(Vector3.zero, true)
+
+				if mouse1click then
+					mouse1click()
+				elseif mouse1press then
+					mouse1press()
+					task.wait(0.1)
+					mouse1release()
+				end
+
+				pcall(function()
+					local cam = workspace.CurrentCamera
+					if cam then
+						cam.CFrame = cam.CFrame * CFrame.Angles(
+							0,
+							math.rad(rand(-10,10)),
+							0
+						)
+					end
+				end)
+
+			end
+
+			task.wait(rand(60,120))
+
+		end
+	end)
+end
+
+
+if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
+	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
+
+	task.spawn(function()
+		while true do
+
+			local tgt = getgenv().currentTarget
+
+			if tgt and tgt.Parent then
+				for _,v in ipairs(tgt:GetDescendants()) do
+					if v:IsA("ProximityPrompt") 
+					and v.Enabled 
+					and v.ActionText == "Purchase" then
+						
+						pcall(function()
+							fireproximityprompt(v, 0)
+						end)
+
+						task.wait(0.2)
+					end
+				end
+			end
+
+			task.wait(0.3)
 		end
 	end)
 end
