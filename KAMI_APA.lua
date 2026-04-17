@@ -341,19 +341,30 @@ task.spawn(function()
 
 		if hum and hum.Health > 0 then
 
-			for _=1,2 do
-				VirtualInputManager:SendKeyEvent(true,Enum.KeyCode.I,false,game)
-				VirtualInputManager:SendKeyEvent(false,Enum.KeyCode.I,false,game)
+
+			local function pressKey(key)
+				VirtualInputManager:SendKeyEvent(true, key, false, game)
+				task.wait(math.random(10,25)/100) -- 0.1 - 0.25 detik
+				VirtualInputManager:SendKeyEvent(false, key, false, game)
+				task.wait(math.random(20,50)/100) -- jeda antar input
 			end
 
-			for _=1,2 do
-				VirtualInputManager:SendKeyEvent(true,Enum.KeyCode.O,false,game)
-				VirtualInputManager:SendKeyEvent(false,Enum.KeyCode.O,false,game)
+
+			for _ = 1, 2 do
+				pressKey(Enum.KeyCode.I)
+			end
+
+			task.wait(math.random(1,2)) -- jeda antar tombol
+
+
+			for _ = 1, 2 do
+				pressKey(Enum.KeyCode.O)
 			end
 
 		end
 
-		task.wait(360)
+		-- delay utama (dibikin random biar ga kaku)
+		task.wait(math.random(300,420)) -- 5 - 7 menit
 
 	end
 
