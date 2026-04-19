@@ -276,7 +276,7 @@ local TARGETS = {
 
 local ARRIVE_DISTANCE = 3
 local MOVE_TIMEOUT = 5
-local TARGET_DELAY = 0.4
+local TARGET_DELAY = 2
 local LOOP_IDLE = 30
 
 local function getChar()
