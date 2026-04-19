@@ -289,24 +289,28 @@ task.spawn(function()
 while true do
 	local humanoid, root = getChar()
 
-	for i, target in ipairs(TARGETS) do
-		if humanoid.Health <= 0 then break end
+for i, target in ipairs(TARGETS) do
+	if humanoid.Health <= 0 then break end
 
-		print("🎯 Target", i)
+	print("🎯 Target", i)
 
-		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-		humanoid:MoveTo(goal)
+	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+	humanoid:MoveTo(goal)
 
-		local start = tick()
-		while tick() - start < MOVE_TIMEOUT do
-			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-				break
-			end
-			task.wait(0.1)
+	local start = tick()
+	while tick() - start < MOVE_TIMEOUT do
+		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
+			break
 		end
-
-		task.wait(TARGET_DELAY)
+		task.wait(0.1)
 	end
+
+
+	humanoid:Move(Vector3.zero, true)
+
+
+	task.wait(1)
+end
 
 	task.wait(LOOP_IDLE)
 end
