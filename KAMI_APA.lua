@@ -482,7 +482,7 @@ task.wait(0)
 print("AUTO E ACTIVE")
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Spawn" or string.find(prompt.ObjectText or "", "Spin") then
+	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
 		task.wait(0.1)
 		pcall(function()
 			fireproximityprompt(prompt)
