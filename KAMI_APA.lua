@@ -228,8 +228,8 @@ task.spawn(function()
 					local dist =
 						(hrp.Position - part.Position).Magnitude
 
-					if false then
 						hum:MoveTo(part.Position)
+						task.wait(0.1)
 					end
 
 					if dist <= getgenv().GRAB_RADIUS then
