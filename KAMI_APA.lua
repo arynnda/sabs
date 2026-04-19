@@ -1,3 +1,4 @@
+task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -15,7 +16,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 6
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -265,39 +266,55 @@ task.spawn(function()
 
 end)
 
-local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
-local RETURN_DISTANCE = 5
+task.wait(10)
+
+local TARGETS = {
+	Vector3.new(-348.0880126953125, -7.00197696685791, 200.22195434570312),
+	Vector3.new(-434.94287109375,-6.627068042755127,62.77268600463867),
+}
+
+local ARRIVE_DISTANCE = 3
+local MOVE_TIMEOUT = 5
+local TARGET_DELAY = 0.4
+local LOOP_IDLE = 30
+
+local function getChar()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
+end
 
 task.spawn(function()
 
-	while true do
+while true do
+	local humanoid, root = getChar()
 
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+	for i, target in ipairs(TARGETS) do
+		if humanoid.Health <= 0 then break end
 
-		if hum and root and hum.Health > 0 then
+		print("🎯 Target", i)
 
-			local target =
-				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
+		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+		humanoid:MoveTo(goal)
 
-			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
-				hum:MoveTo(target)
+		local start = tick()
+		while tick() - start < MOVE_TIMEOUT do
+			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
+				break
 			end
-
+			task.wait(0.1)
 		end
 
-		task.wait(1)
-
+		task.wait(TARGET_DELAY)
 	end
 
+	task.wait(LOOP_IDLE)
+end
+
 end)
-
-
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 360
+	local AUTO_RESET_DELAY = 150
 
 	task.spawn(function()
 
