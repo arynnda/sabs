@@ -314,7 +314,7 @@ end)
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 150
+	local AUTO_RESET_DELAY = 600
 
 	task.spawn(function()
 
