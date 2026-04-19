@@ -473,3 +473,19 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 		end
 	end)
 end
+
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(0)
+print("AUTO E ACTIVE")
+
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Spawn" or string.find(prompt.ObjectText or "", "Spin") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
+	end
+end)
