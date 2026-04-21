@@ -1,4 +1,3 @@
-task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -16,7 +15,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 12
+getgenv().MAX_SPAWN_BEFORE_FORGET = 5
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -266,59 +265,39 @@ task.spawn(function()
 
 end)
 
-task.wait(10)
-
-local TARGETS = {
-	Vector3.new( -437.72210693359375, -6.1552252769470215, 60.34728240966797),
-	Vector3.new(-409.47283935546875, -6.403680801391602, 64.42124938964844),
-}
-
-local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
-local TARGET_DELAY = 5
-local LOOP_IDLE = 30
-
-local function getChar()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
-end
+local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+local RETURN_DISTANCE = 5
 
 task.spawn(function()
 
-while true do
-	local humanoid, root = getChar()
+	while true do
 
-for i, target in ipairs(TARGETS) do
-	if humanoid.Health <= 0 then break end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
 
-	print("🎯 Target", i)
+		if hum and root and hum.Health > 0 then
 
-	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-	humanoid:MoveTo(goal)
+			local target =
+				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
 
-	local start = tick()
-	while tick() - start < MOVE_TIMEOUT do
-		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-			break
+			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+				hum:MoveTo(target)
+			end
+
 		end
-		task.wait(0.1)
+
+		task.wait(1)
+
 	end
 
-
-	humanoid:Move(Vector3.zero, true)
-
-
-	task.wait(1)
-end
-
-	task.wait(LOOP_IDLE)
-end
-
 end)
+
+
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 300
+	local AUTO_RESET_DELAY = 150
 
 	task.spawn(function()
 
@@ -443,7 +422,7 @@ if not getgenv().__KAMI_APA_ANTI_AFK then
 
 			end
 
-			task.wait(rand(60,120))
+			task.wait(rand(60,120)) -- 1 - 2 menit
 
 		end
 	end)
@@ -477,19 +456,3 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 		end
 	end)
 end
-
-if getgenv().AUTO_E then return end
-getgenv().AUTO_E = true
-
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.wait(0)
-print("AUTO E ACTIVE")
-
-ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
-		task.wait(0.1)
-		pcall(function()
-			fireproximityprompt(prompt)
-		end)
-	end
-end)
