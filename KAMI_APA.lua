@@ -9,7 +9,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or { "Noobini Pizzanini"}
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
 
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
