@@ -15,7 +15,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 5
+getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -96,6 +96,19 @@ local function hasPurchasePrompt(model)
 	return false
 end
 
+local function isPurchased(model)
+
+	for _,v in ipairs(model:GetDescendants()) do
+		if v:IsA("ProximityPrompt") and v.ActionText == "Purchase" then
+			if v.Enabled then
+				return false
+			end
+		end
+	end
+
+	return true
+end
+
 local function addTarget(unit)
 
 	if getgenv().TARGET_SPAWN_TIME[unit] then return end
@@ -122,55 +135,6 @@ workspace.DescendantAdded:Connect(function(o)
 	if o:IsA("Model") and isTarget(o) then
 		addTarget(o)
 	end
-
-end)
-
-local lastCash
-local cashValue
-
-local function setupCashWatcher()
-
-	local stats = player:FindFirstChild("leaderstats")
-	if not stats then return end
-
-	cashValue =
-		stats:FindFirstChild("Cash")
-		or stats:FindFirstChild("Money")
-		or stats:FindFirstChild("Coins")
-
-	if not cashValue then return end
-
-	lastCash = cashValue.Value
-
-	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
-
-		if not getgenv().currentTarget then
-			lastCash = cashValue.Value
-			return
-		end
-
-		if cashValue.Value < lastCash then
-
-			local tgt = getgenv().currentTarget
-
-			if tgt then
-				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
-			end
-
-			getgenv().currentTarget = nil
-
-		end
-
-		lastCash = cashValue.Value
-
-	end)
-
-end
-
-task.spawn(function()
-
-	repeat task.wait(1) until player:FindFirstChild("leaderstats")
-	setupCashWatcher()
 
 end)
 
@@ -231,19 +195,19 @@ task.spawn(function()
 						hum:MoveTo(part.Position)
 					end
 
-					if dist <= getgenv().GRAB_RADIUS then
+if dist <= getgenv().GRAB_RADIUS then
 
-						if not hasPurchasePrompt(tgt) then
+if not hasPurchasePrompt(tgt) then
 
-							local id = getUnitID(tgt)
+		local id = getUnitID(tgt)
 
-							getgenv().FORGOTTEN_UNITS[id] = true
-							getgenv().TARGET_SPAWN_TIME[tgt] = nil
-							getgenv().currentTarget = nil
+		getgenv().FORGOTTEN_UNITS[id] = true
+		getgenv().TARGET_SPAWN_TIME[tgt] = nil
+		getgenv().currentTarget = nil
 
-						end
+	end
 
-					end
+end
 
 				end
 
@@ -292,12 +256,51 @@ task.spawn(function()
 	end
 
 end)
+task.spawn(function()
 
+	local camera = workspace.CurrentCamera
+
+	local function zoomIn()
+		if camera then
+			camera.FieldOfView = math.clamp(camera.FieldOfView - 5, 20, 70)
+		end
+	end
+
+	local function zoomOut()
+		if camera then
+			camera.FieldOfView = math.clamp(camera.FieldOfView + 5, 20, 70)
+		end
+	end
+
+	while true do
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+		if hum and hum.Health > 0 then
+
+			for _ = 1,2 do
+				zoomIn() -- setara tombol I
+				task.wait(0.1)
+			end
+
+			for _ = 1,2 do
+				zoomOut() -- setara tombol O
+				task.wait(0.1)
+			end
+
+		end
+
+		task.wait(360)
+
+	end
+
+end)
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 350
+	local AUTO_RESET_DELAY = 150
 
 	task.spawn(function()
 
@@ -437,22 +440,26 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 
 			local tgt = getgenv().currentTarget
 
-			if tgt and tgt.Parent then
-				for _,v in ipairs(tgt:GetDescendants()) do
-					if v:IsA("ProximityPrompt") 
-					and v.Enabled 
-					and v.ActionText == "Purchase" then
-						
-						pcall(function()
-							fireproximityprompt(v, 0)
-						end)
+		if tgt and tgt.Parent and isPurchased(tgt) then
+			getgenv().currentTarget = nil
+		end
 
-						task.wait(0.2)
-					end
+		if tgt and tgt.Parent then
+			for _,v in ipairs(tgt:GetDescendants()) do
+				if v:IsA("ProximityPrompt") 
+				and v.Enabled 
+				and v.ActionText == "Purchase" then
+					
+					pcall(function()
+						fireproximityprompt(v, 0)
+					end)
+
+					task.wait(0.2)
 				end
 			end
-
-			task.wait(0.3)
 		end
+
+		task.wait(0.3)
+	end
 	end)
 end
