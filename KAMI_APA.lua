@@ -9,13 +9,13 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or { "Noobini Pizzanini"}
 
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 8
+getgenv().MAX_SPAWN_BEFORE_FORGET = 5
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -368,69 +368,77 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
-if not getgenv().__KAMI_APA_ANTI_AFK then
-	getgenv().__KAMI_APA_ANTI_AFK = true
+
+if not getgenv().__KAMI_APA_AFK then
+	getgenv().__KAMI_APA_AFK = true
 
 	local Players = game:GetService("Players")
 	local player = Players.LocalPlayer
 
-
-	task.wait(10)
-
+	local function getHum()
+		local char = player.Character or player.CharacterAdded:Wait()
+		return char:WaitForChild("Humanoid")
+	end
 
 	local function rand(a,b)
 		return math.random(a,b)
 	end
 
-	task.spawn(function()
-		while getgenv().__KAMI_APA_ANTI_AFK do
+	local function doRandomAction()
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not (hum and hrp and hum.Health > 0) then return end
 
-			if hum and hrp and hum.Health > 0 then
+		local action = rand(1,4)
 
 
-				local moveDir = Vector3.new(
-					math.random(-1,1),
-					0,
-					math.random(-1,1)
-				)
+		if action == 1 then
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
 
-				hum:Move(moveDir, true)
 
-				task.wait(rand(1,3))
+		elseif action == 2 then
+			local dir = Vector3.new(rand(-1,1),0,rand(-1,1))
+			hum:Move(dir, true)
+			task.wait(rand(1,2))
+			hum:Move(Vector3.zero, true)
 
-				hum:Move(Vector3.zero, true)
 
-				if mouse1click then
-					mouse1click()
-				elseif mouse1press then
-					mouse1press()
-					task.wait(0.1)
-					mouse1release()
-				end
-
-				pcall(function()
-					local cam = workspace.CurrentCamera
-					if cam then
-						cam.CFrame = cam.CFrame * CFrame.Angles(
-							0,
-							math.rad(rand(-10,10)),
-							0
-						)
-					end
-				end)
-
+		elseif action == 3 then
+			if mouse1click then
+				mouse1click()
+			elseif mouse1press then
+				mouse1press()
+				task.wait(0.1)
+				mouse1release()
 			end
 
-			task.wait(rand(60,120)) -- 1 - 2 menit
 
+		elseif action == 4 then
+			pcall(function()
+				local cam = workspace.CurrentCamera
+				if cam then
+					cam.CFrame = cam.CFrame * CFrame.Angles(
+						0,
+						math.rad(rand(-15,15)),
+						0
+					)
+				end
+			end)
+		end
+	end
+
+	task.spawn(function()
+		while getgenv().__KAMI_APA_SMART_AFK do
+			doRandomAction()
+
+			
+			task.wait(rand(20,40))
 		end
 	end)
-end
 
+end
 
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
