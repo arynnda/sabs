@@ -1,7 +1,7 @@
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
-task.wait(5)
+task.wait(10)
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
