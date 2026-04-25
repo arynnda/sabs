@@ -227,7 +227,7 @@ local TARGETS = {
 }
 
 local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
+local MOVE_TIMEOUT = 1
 local TARGET_DELAY = 5
 local LOOP_IDLE = 30
 
