@@ -1,7 +1,8 @@
+task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
-task.wait(10)
+task.wait(5)
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
@@ -15,7 +16,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 5
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -96,19 +97,6 @@ local function hasPurchasePrompt(model)
 	return false
 end
 
-local function isPurchased(model)
-
-	for _,v in ipairs(model:GetDescendants()) do
-		if v:IsA("ProximityPrompt") and v.ActionText == "Purchase" then
-			if v.Enabled then
-				return false
-			end
-		end
-	end
-
-	return true
-end
-
 local function addTarget(unit)
 
 	if getgenv().TARGET_SPAWN_TIME[unit] then return end
@@ -137,6 +125,7 @@ workspace.DescendantAdded:Connect(function(o)
 	end
 
 end)
+
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
@@ -195,19 +184,19 @@ task.spawn(function()
 						hum:MoveTo(part.Position)
 					end
 
-if dist <= getgenv().GRAB_RADIUS then
+					if dist <= getgenv().GRAB_RADIUS then
 
-if not hasPurchasePrompt(tgt) then
+						if not hasPurchasePrompt(tgt) then
 
-		local id = getUnitID(tgt)
+							local id = getUnitID(tgt)
 
-		getgenv().FORGOTTEN_UNITS[id] = true
-		getgenv().TARGET_SPAWN_TIME[tgt] = nil
-		getgenv().currentTarget = nil
+							getgenv().FORGOTTEN_UNITS[id] = true
+							getgenv().TARGET_SPAWN_TIME[tgt] = nil
+							getgenv().currentTarget = nil
 
-	end
+						end
 
-end
+					end
 
 				end
 
@@ -229,74 +218,122 @@ end
 
 end)
 
-local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
-local RETURN_DISTANCE = 5
+task.wait(10)
+
+local TARGETS = {
+	Vector3.new( -437.72210693359375, -6.1552252769470215, 60.34728240966797),
+	Vector3.new(-410.59222412109375, -6.403680801391602, 60.1386604309082),
+	Vector3.new(-411.4170837402344, -6.403680801391602, 241.06239318847656),
+}
+
+local ARRIVE_DISTANCE = 3
+local MOVE_TIMEOUT = 5
+local TARGET_DELAY = 5
+local LOOP_IDLE = 30
+
+local function getChar()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
+end
 
 task.spawn(function()
 
-	while true do
+while true do
+	local humanoid, root = getChar()
 
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+	for i, target in ipairs(TARGETS) do
+		if humanoid.Health <= 0 then break end
 
-		if hum and root and hum.Health > 0 then
+		print("🎯 Target", i)
 
-			local target =
-				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
+		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+		humanoid:MoveTo(goal)
 
-			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
-				hum:MoveTo(target)
+		local start = tick()
+		while tick() - start < MOVE_TIMEOUT do
+			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
+				break
+			end
+			task.wait(0.1)
+		end
+
+		task.wait(TARGET_DELAY)
+	end
+
+	task.wait(LOOP_IDLE)
+end
+
+end)
+if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
+
+	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
+	local AUTO_RESET_DELAY = 300
+
+	task.spawn(function()
+
+		while true do
+
+			task.wait(AUTO_RESET_DELAY)
+
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+			if hum and hum.Health > 0 then
+				if not getgenv().currentTarget
+					and #getgenv().TARGET_QUEUE == 0 then
+					hum.Health = 0
+				end
 			end
 
 		end
 
+	end)
+
+end
+
+if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
+	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
+
+	local function equipSpeedCoil()
+
+		local char = player.Character
+		if not char then return end
+
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if not backpack then return end
+
+		for _,tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
+				hum:EquipTool(tool)
+				break
+			end
+		end
+
+	end
+
+	player.CharacterAdded:Connect(function()
 		task.wait(1)
+		equipSpeedCoil()
+	end)
 
+	if player:FindFirstChildOfClass("Backpack") then
+		player.Backpack.ChildAdded:Connect(function(tool)
+			task.wait(0.2)
+			equipSpeedCoil()
+		end)
 	end
 
-end)
-task.spawn(function()
-
-	local camera = workspace.CurrentCamera
-
-	local function zoomIn()
-		if camera then
-			camera.FieldOfView = math.clamp(camera.FieldOfView - 5, 20, 70)
+	task.spawn(function()
+		while true do
+			equipSpeedCoil()
+			task.wait(1)
 		end
-	end
+	end)
 
-	local function zoomOut()
-		if camera then
-			camera.FieldOfView = math.clamp(camera.FieldOfView + 5, 20, 70)
-		end
-	end
-
-	while true do
-
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-		if hum and hum.Health > 0 then
-
-			for _ = 1,2 do
-				zoomIn() -- setara tombol I
-				task.wait(0.1)
-			end
-
-			for _ = 1,2 do
-				zoomOut() -- setara tombol O
-				task.wait(0.1)
-			end
-
-		end
-
-		task.wait(360)
-
-	end
-
-end)
-
+end
 
 if not getgenv().__KAMI_APA_SMART_AFK then
 	getgenv().__KAMI_APA_SMART_AFK = true
@@ -369,76 +406,6 @@ if not getgenv().__KAMI_APA_SMART_AFK then
 
 end
 
-if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
-
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 600
-
-	task.spawn(function()
-
-		while true do
-
-			task.wait(AUTO_RESET_DELAY)
-
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-
-		end
-
-	end)
-
-end
-
-if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
-	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
-
-	local function equipSpeedCoil()
-
-		local char = player.Character
-		if not char then return end
-
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if not hum then return end
-
-		local backpack = player:FindFirstChildOfClass("Backpack")
-		if not backpack then return end
-
-		for _,tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
-				hum:EquipTool(tool)
-				break
-			end
-		end
-
-	end
-
-	player.CharacterAdded:Connect(function()
-		task.wait(1)
-		equipSpeedCoil()
-	end)
-
-	if player:FindFirstChildOfClass("Backpack") then
-		player.Backpack.ChildAdded:Connect(function(tool)
-			task.wait(0.2)
-			equipSpeedCoil()
-		end)
-	end
-
-	task.spawn(function()
-		while true do
-			equipSpeedCoil()
-			task.wait(1)
-		end
-	end)
-
-end
 
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
@@ -448,26 +415,38 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 
 			local tgt = getgenv().currentTarget
 
-		if tgt and tgt.Parent and isPurchased(tgt) then
-			getgenv().currentTarget = nil
-		end
+			if tgt and tgt.Parent then
+				for _,v in ipairs(tgt:GetDescendants()) do
+					if v:IsA("ProximityPrompt") 
+					and v.Enabled 
+					and v.ActionText == "Purchase" then
+						
+						pcall(function()
+							fireproximityprompt(v, 0)
+						end)
 
-		if tgt and tgt.Parent then
-			for _,v in ipairs(tgt:GetDescendants()) do
-				if v:IsA("ProximityPrompt") 
-				and v.Enabled 
-				and v.ActionText == "Purchase" then
-					
-					pcall(function()
-						fireproximityprompt(v, 0)
-					end)
-
-					task.wait(0.2)
+						task.wait(0.2)
+					end
 				end
 			end
-		end
 
-		task.wait(0.3)
-	end
+			task.wait(0.3)
+		end
 	end)
 end
+
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(0)
+print("AUTO E ACTIVE")
+
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
+	end
+end)
