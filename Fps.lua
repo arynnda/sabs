@@ -1,10 +1,12 @@
+setfpscap(8)
+
 task.spawn(function()
     repeat task.wait() until game:IsLoaded()
     repeat task.wait() until game:GetService("Players").LocalPlayer
 end)
 
 getgenv().BlackModeConfig = {
-    enableBlackOverlay = false,
+    enableBlackOverlay = true,
     overlayZIndex = 100000,
     overlayTransparency = 0,
     reduceGraphics = true,
