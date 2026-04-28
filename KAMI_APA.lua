@@ -326,24 +326,9 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	end)
 
 end
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
-
-	local function doPurchase(prompt)
-		if not prompt or not prompt.Enabled then return end
-
-		local hold = prompt.HoldDuration or 0
-
-		getgenv().IS_INTERACTING = true
-
-		pcall(function()
-			fireproximityprompt(prompt, hold)
-		end)
-
-		task.wait(hold + 0.1)
-
-		getgenv().IS_INTERACTING = false
-	end
 
 	task.spawn(function()
 		while true do
@@ -356,16 +341,16 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.Enabled 
 					and v.ActionText == "Purchase" then
 						
-						if not getgenv().IS_INTERACTING then
-							doPurchase(v)
-						end
+						pcall(function()
+							fireproximityprompt(v, 0)
+						end)
 
-						task.wait(0.3)
+						task.wait(0.2)
 					end
 				end
 			end
 
-			task.wait(0.2)
+			task.wait(0.3)
 		end
 	end)
 end
