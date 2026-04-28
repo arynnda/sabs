@@ -1,4 +1,3 @@
-task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -17,7 +16,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 12
+getgenv().MAX_SPAWN_BEFORE_FORGET = 6
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -127,7 +126,6 @@ workspace.DescendantAdded:Connect(function(o)
 
 end)
 
-
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
 	if prompt.ActionText ~= "Purchase" then return end
@@ -219,56 +217,58 @@ task.spawn(function()
 
 end)
 
-task.wait(10)
-
-local TARGETS = {
-	Vector3.new( -437.72210693359375, -6.1552252769470215, 60.34728240966797),
-	Vector3.new(-410.59222412109375, -6.403680801391602, 60.1386604309082),
-	Vector3.new(-411.4170837402344, -6.403680801391602, 241.06239318847656),
-}
-
-local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
-local TARGET_DELAY = 5
-local LOOP_IDLE = 30
-
-local function getChar()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
-end
+local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+local RETURN_DISTANCE = 5
 
 task.spawn(function()
 
-while true do
-	local humanoid, root = getChar()
+	while true do
 
-	for i, target in ipairs(TARGETS) do
-		if humanoid.Health <= 0 then break end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
 
-		print("🎯 Target", i)
+		if hum and root and hum.Health > 0 then
 
-		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-		humanoid:MoveTo(goal)
+			local target =
+				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
 
-		local start = tick()
-		while tick() - start < MOVE_TIMEOUT do
-			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-				break
+			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+				hum:MoveTo(target)
 			end
-			task.wait(0.1)
+
 		end
 
-		task.wait(TARGET_DELAY)
+		task.wait(1)
+
 	end
 
-	task.wait(LOOP_IDLE)
-end
-
 end)
+
+getgenv().IS_INTERACTING = false
+    local function clickGuiButton(btn)
+        pcall(function() firesignal(btn.MouseButton1Click) end)
+        pcall(function() fireclick(btn) end)
+        pcall(function() fireclickevent(btn) end)
+        pcall(function() btn.MouseButton1Click:Fire() end)
+        pcall(function() firesignal(btn.Activated) end)
+        pcall(function() btn.Activated:Fire() end)
+        pcall(function()
+            local p = btn.AbsolutePosition + btn.AbsoluteSize / 2
+            VIM:SendMouseButtonEvent(p.X, p.Y, 0, true, game, 1); task.wait(0.05)
+            VIM:SendMouseButtonEvent(p.X, p.Y, 0, false, game, 1)
+        end)
+        pcall(function()
+            local p = btn.AbsolutePosition + btn.AbsoluteSize / 2
+            VIM:SendMouseButtonEvent(p.X, p.Y, 0, true, game, 0); task.wait(0.05)
+            VIM:SendMouseButtonEvent(p.X, p.Y, 0, false, game, 0)
+        end)
+    end
+
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 600
+	local AUTO_RESET_DELAY = 400
 
 	task.spawn(function()
 
@@ -291,49 +291,6 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 	end)
 
 end
-
-task.spawn(function()
-	while getgenv().__KAMI_APA_ANTI_AFK do
-
-
-		local delayTime = math.random(300, 600)
-		task.wait(delayTime)
-
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-
-		if hum and hrp and hum.Health > 0
-			and not getgenv().currentTarget
-			and #getgenv().TARGET_QUEUE == 0
-			and not getgenv().IS_INTERACTING then
-
-			pcall(function()
-				local cam = workspace.CurrentCamera
-				local pos = Vector2.new(
-					math.random(200, 800),
-					math.random(200, 600)
-				)
-
-
-				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
-				task.wait(0.1)
-				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
-
-				if cam then
-					cam.CFrame = cam.CFrame * CFrame.Angles(
-						0,
-						math.rad(math.random(-5,5)),
-						0
-					)
-				end
-			end)
-
-		end
-
-	end
-end)
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
@@ -379,6 +336,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
@@ -393,9 +351,15 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.Enabled 
 					and v.ActionText == "Purchase" then
 						
-						pcall(function()
-							fireproximityprompt(v, 0)
-						end)
+					getgenv().IS_INTERACTING = true
+
+					pcall(function()
+						fireproximityprompt(v, 0)
+					end)
+
+					task.wait(0.2)
+
+					getgenv().IS_INTERACTING = false
 
 						task.wait(0.2)
 					end
@@ -406,19 +370,3 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 		end
 	end)
 end
-
-if getgenv().AUTO_E then return end
-getgenv().AUTO_E = true
-
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.wait(0)
-print("AUTO E ACTIVE")
-
-ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
-		task.wait(0.1)
-		pcall(function()
-			fireproximityprompt(prompt)
-		end)
-	end
-end)
