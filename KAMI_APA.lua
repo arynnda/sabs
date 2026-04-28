@@ -1,21 +1,12 @@
+task.wait(10)
+if getgenv().__KAMI_APA_MAIN_RUNNING then return end
+getgenv().__KAMI_APA_MAIN_RUNNING = true
+
 task.wait(5)
-getgenv().__KAMI_GLOBAL = getgenv().__KAMI_GLOBAL or {}
-local GLOBAL = getgenv().__KAMI_GLOBAL
-
-GLOBAL.RUNNING_SCRIPTS = GLOBAL.RUNNING_SCRIPTS or {}
-
-local SCRIPT_ID = "FARM"
-
-if GLOBAL.RUNNING_SCRIPTS[SCRIPT_ID] then
-    warn()
-    return
-end
-GLOBAL.RUNNING_SCRIPTS[SCRIPT_ID] = true
-
-GLOBAL.ACTIVE_MODE = "FARM"
+repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
@@ -25,8 +16,9 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 8
-getgenv().GRAB_RADIUS = 12
+getgenv().MAX_SPAWN_BEFORE_FORGET = 12
+
+getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
@@ -35,13 +27,14 @@ getgenv().currentTarget = nil
 getgenv().targetStartTime = 0
 getgenv().TARGET_SPAWN_TIME = {}
 
-local RETRY_INTERVAL = 0.5
+local RETRY_INTERVAL = 1
 
 local function getUnitID(m)
 	return m:GetAttribute("Index") or m.Name
 end
 
 local function canProcessUnit(m)
+
 	if getgenv().SEEN_UNIT_INSTANCES[m] then
 		return not getgenv().FORGOTTEN_UNITS[getUnitID(m)]
 	end
@@ -49,6 +42,7 @@ local function canProcessUnit(m)
 	getgenv().SEEN_UNIT_INSTANCES[m] = true
 
 	local id = getUnitID(m)
+
 	getgenv().UNIT_SPAWN_COUNT[id] =
 		(getgenv().UNIT_SPAWN_COUNT[id] or 0) + 1
 
@@ -61,6 +55,7 @@ local function canProcessUnit(m)
 end
 
 local function isTarget(m)
+
 	if getgenv().FORGOTTEN_UNITS[getUnitID(m)] then
 		return false
 	end
@@ -78,6 +73,7 @@ local function isTarget(m)
 end
 
 local function getTargetPart(model)
+
 	if model.PrimaryPart then
 		return model.PrimaryPart
 	end
@@ -87,77 +83,66 @@ local function getTargetPart(model)
 			return d
 		end
 	end
+
 end
 
 local function hasPurchasePrompt(model)
+
 	for _,d in ipairs(model:GetDescendants()) do
 		if d:IsA("ProximityPrompt") and d.ActionText == "Purchase" then
 			return true
 		end
 	end
+
 	return false
 end
 
 local function addTarget(unit)
+
 	if getgenv().TARGET_SPAWN_TIME[unit] then return end
 
 	getgenv().TARGET_SPAWN_TIME[unit] = tick()
 	table.insert(getgenv().TARGET_QUEUE,unit)
+
 end
 
-for _,o in ipairs(workspace:GetDescendants()) do
-	if o:IsA("Model") and isTarget(o) then
-		addTarget(o)
+local function scanExistingTargets()
+
+	for _,o in ipairs(workspace:GetDescendants()) do
+		if o:IsA("Model") and isTarget(o) then
+			addTarget(o)
+		end
 	end
+
 end
+
+scanExistingTargets()
 
 workspace.DescendantAdded:Connect(function(o)
+
 	if o:IsA("Model") and isTarget(o) then
 		addTarget(o)
 	end
+
 end)
 
-getgenv().__KAMI_BUY_LOCK = false
 
-task.spawn(function()
-	while GLOBAL.RUNNING_SCRIPTS[SCRIPT_ID] do
+ProximityPromptService.PromptShown:Connect(function(prompt)
 
-		local tgt = getgenv().currentTarget
+	if prompt.ActionText ~= "Purchase" then return end
 
-		if tgt and tgt.Parent then
-			for _,v in ipairs(tgt:GetDescendants()) do
-				if v:IsA("ProximityPrompt") 
-				and v.Enabled 
-				and v.ActionText == "Purchase" then
-					
-				
-					if not getgenv().__KAMI_BUY_LOCK then
-						getgenv().__KAMI_BUY_LOCK = true
+	local model = prompt:FindFirstAncestorOfClass("Model")
+	if not model then return end
 
-						
-						for i = 1,3 do
-							pcall(function()
-								fireproximityprompt(v, 2)
-							end)
-						end
+	if not isTarget(model) then return end
 
-						
-						pcall(function()
-							fireproximityprompt(v, 2)
-						end)
+	task.wait(0.05)
 
-						task.wait(0.2)
+	pcall(function()
+		fireproximityprompt(prompt)
+	end)
 
-						getgenv().__KAMI_BUY_LOCK = false
-					end
-				end
-			end
-		end
-
-		task.wait(0.15)
-	end
 end)
-
 
 task.spawn(function()
 
@@ -233,35 +218,52 @@ task.spawn(function()
 
 end)
 
-local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
-local RETURN_DISTANCE = 5
+task.wait(10)
+
+local TARGETS = {
+	Vector3.new( -410.9753723144531, -6.501978874206543, 71.8466796875),
+	Vector3.new(-436.86114501953125, -6.251975059509277, 64.4058723449707),
+	Vector3.new(-412.4242858886719, -6.501978874206543, 60.9798698425293),
+}
+
+local ARRIVE_DISTANCE = 3
+local MOVE_TIMEOUT = 5
+local TARGET_DELAY = 2
+local LOOP_IDLE = 90
+
+local function getChar()
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
+end
 
 task.spawn(function()
 
-	while true do
+while true do
+	local humanoid, root = getChar()
 
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+	for i, target in ipairs(TARGETS) do
+		if humanoid.Health <= 0 then break end
 
-		if hum and root and hum.Health > 0 then
+		print("🎯 Target", i)
 
-			local target =
-				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
+		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+		humanoid:MoveTo(goal)
 
-			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
-				hum:MoveTo(target)
+		local start = tick()
+		while tick() - start < MOVE_TIMEOUT do
+			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
+				break
 			end
-
+			task.wait(0.1)
 		end
 
-		task.wait(1)
-
+		task.wait(TARGET_DELAY)
 	end
 
+	task.wait(LOOP_IDLE)
+end
+
 end)
-
-
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
@@ -332,3 +334,47 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	end)
 
 end
+
+if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
+	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
+
+	task.spawn(function()
+		while true do
+
+			local tgt = getgenv().currentTarget
+
+			if tgt and tgt.Parent then
+				for _,v in ipairs(tgt:GetDescendants()) do
+					if v:IsA("ProximityPrompt") 
+					and v.Enabled 
+					and v.ActionText == "Purchase" then
+						
+						pcall(function()
+							fireproximityprompt(v, 0)
+						end)
+
+						task.wait(0.2)
+					end
+				end
+			end
+
+			task.wait(0.3)
+		end
+	end)
+end
+
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(0)
+print("AUTO E ACTIVE")
+
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
+	end
+end)
