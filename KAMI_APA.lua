@@ -245,25 +245,16 @@ task.spawn(function()
 
 end)
 
-getgenv().IS_INTERACTING = false
-    local function clickGuiButton(btn)
-        pcall(function() firesignal(btn.MouseButton1Click) end)
-        pcall(function() fireclick(btn) end)
-        pcall(function() fireclickevent(btn) end)
-        pcall(function() btn.MouseButton1Click:Fire() end)
-        pcall(function() firesignal(btn.Activated) end)
-        pcall(function() btn.Activated:Fire() end)
-        pcall(function()
-            local p = btn.AbsolutePosition + btn.AbsoluteSize / 2
-            VIM:SendMouseButtonEvent(p.X, p.Y, 0, true, game, 1); task.wait(0.05)
-            VIM:SendMouseButtonEvent(p.X, p.Y, 0, false, game, 1)
-        end)
-        pcall(function()
-            local p = btn.AbsolutePosition + btn.AbsoluteSize / 2
-            VIM:SendMouseButtonEvent(p.X, p.Y, 0, true, game, 0); task.wait(0.05)
-            VIM:SendMouseButtonEvent(p.X, p.Y, 0, false, game, 0)
-        end)
-    end
+local VIM = game:GetService("VirtualInputManager")
+
+task.spawn(function()
+	while true do
+		VIM:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+		task.wait(0.1)
+		VIM:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+		task.wait(60)
+	end
+end)
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
