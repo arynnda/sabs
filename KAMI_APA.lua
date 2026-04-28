@@ -1,4 +1,3 @@
-task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -7,6 +6,7 @@ repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local VIM = game:GetService("VirtualInputManager")
 
 local player = Players.LocalPlayer
 
@@ -16,7 +16,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 12
+getgenv().MAX_SPAWN_BEFORE_FORGET = 6
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -126,7 +126,6 @@ workspace.DescendantAdded:Connect(function(o)
 
 end)
 
-
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
 	if prompt.ActionText ~= "Purchase" then return end
@@ -218,56 +217,81 @@ task.spawn(function()
 
 end)
 
-task.wait(10)
-
-local TARGETS = {
-	Vector3.new( -410.9753723144531, -6.501978874206543, 71.8466796875),
-	Vector3.new(-436.86114501953125, -6.251975059509277, 64.4058723449707),
-	Vector3.new(-412.4242858886719, -6.501978874206543, 60.9798698425293),
-}
-
-local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 1
-local TARGET_DELAY = 2
-local LOOP_IDLE = 30
-
-local function getChar()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
-end
+local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+local RETURN_DISTANCE = 5
 
 task.spawn(function()
 
-while true do
-	local humanoid, root = getChar()
+	while true do
 
-	for i, target in ipairs(TARGETS) do
-		if humanoid.Health <= 0 then break end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
 
-		print("🎯 Target", i)
+		if hum and root and hum.Health > 0 then
 
-		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-		humanoid:MoveTo(goal)
+			local target =
+				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
 
-		local start = tick()
-		while tick() - start < MOVE_TIMEOUT do
-			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-				break
+			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+				hum:MoveTo(target)
 			end
-			task.wait(0.1)
+
 		end
 
-		task.wait(TARGET_DELAY)
+		task.wait(1)
+
 	end
 
-	task.wait(LOOP_IDLE)
-end
-
 end)
+
+task.spawn(function()
+	while getgenv().__KAMI_APA_ANTI_AFK do
+
+
+		local delayTime = math.random(300, 600)
+		task.wait(delayTime)
+
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+
+		if hum and hrp and hum.Health > 0
+			and not getgenv().currentTarget
+			and #getgenv().TARGET_QUEUE == 0
+			and not getgenv().IS_INTERACTING then
+
+			pcall(function()
+				local cam = workspace.CurrentCamera
+				local pos = Vector2.new(
+					math.random(200, 800),
+					math.random(200, 600)
+				)
+
+
+				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
+				task.wait(0.1)
+				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
+
+				if cam then
+					cam.CFrame = cam.CFrame * CFrame.Angles(
+						0,
+						math.rad(math.random(-5,5)),
+						0
+					)
+				end
+			end)
+
+		end
+
+	end
+end)
+
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 1200
+	local AUTO_RESET_DELAY = 400
 
 	task.spawn(function()
 
@@ -335,77 +359,6 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
-if not getgenv().__KAMI_APA_SMART_AFK then
-	getgenv().__KAMI_APA_SMART_AFK = true
-
-	local Players = game:GetService("Players")
-	local player = Players.LocalPlayer
-
-	local function getHum()
-		local char = player.Character or player.CharacterAdded:Wait()
-		return char:WaitForChild("Humanoid")
-	end
-
-	local function rand(a,b)
-		return math.random(a,b)
-	end
-
-	local function doRandomAction()
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-		if not (hum and hrp and hum.Health > 0) then return end
-
-		local action = rand(1,4)
-
-
-		if action == 1 then
-			hum:ChangeState(Enum.HumanoidStateType.Jumping)
-
-
-		elseif action == 2 then
-			local dir = Vector3.new(rand(-1,1),0,rand(-1,1))
-			hum:Move(dir, true)
-			task.wait(rand(1,2))
-			hum:Move(Vector3.zero, true)
-
-
-		elseif action == 3 then
-			if mouse1click then
-				mouse1click()
-			elseif mouse1press then
-				mouse1press()
-				task.wait(0.1)
-				mouse1release()
-			end
-
-
-		elseif action == 4 then
-			pcall(function()
-				local cam = workspace.CurrentCamera
-				if cam then
-					cam.CFrame = cam.CFrame * CFrame.Angles(
-						0,
-						math.rad(rand(-15,15)),
-						0
-					)
-				end
-			end)
-		end
-	end
-
-	task.spawn(function()
-		while getgenv().__KAMI_APA_SMART_AFK do
-			doRandomAction()
-
-
-			task.wait(rand(20,40))
-		end
-	end)
-
-end
-
 
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
@@ -434,19 +387,3 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 		end
 	end)
 end
-
-if getgenv().AUTO_E then return end
-getgenv().AUTO_E = true
-
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.wait(0)
-print("AUTO E ACTIVE")
-
-ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
-		task.wait(0.1)
-		pcall(function()
-			fireproximityprompt(prompt)
-		end)
-	end
-end)
