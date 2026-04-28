@@ -1,10 +1,17 @@
-setfpscap(15)
-task.spawn(function()
-    repeat task.wait() until game:IsLoaded()
-    repeat task.wait() until game:GetService("Players").LocalPlayer
-end)
+setfpscap(12)
+if getgenv().__KAMI_BLACKSCREEN_RUNNING then return end
+getgenv().__KAMI_BLACKSCREEN_RUNNING = true
 
-getgenv().BlackModeConfig = {
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game:GetService("Players").LocalPlayer
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+getgenv().BlackScreenConfig = {
     enableBlackOverlay = true,
     overlayZIndex = 100000,
     overlayTransparency = 0,
@@ -14,8 +21,10 @@ getgenv().BlackModeConfig = {
     toggleBoosterKey = Enum.KeyCode.F6
 }
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local overlayGui
+local overlayFrame
+local fpsLabel
+local overlayEnabled = getgenv().BlackScreenConfig.enabled
 
 local function applySafeOptimizations(enable)
     pcall(function()
@@ -93,152 +102,102 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 
 local function createOverlay()
-    if getgenv()._CicaOverlayCreated then return end
-    getgenv()._CicaOverlayCreated = true
 
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "KAMI•APABlackModeGUI"
-    gui.DisplayOrder = 999999
-    gui.IgnoreGuiInset = true
-    gui.ResetOnSpawn = false
-    gui.Parent = game:GetService("CoreGui")
+    overlayGui = Instance.new("ScreenGui")
+    overlayGui.Name = "KAMI•APA"
+    overlayGui.IgnoreGuiInset = true
+    overlayGui.ResetOnSpawn = false
+    overlayGui.DisplayOrder = 999999
+    overlayGui.Parent = game:GetService("CoreGui")
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1,0,1,0)
-    frame.BackgroundColor3 = Color3.new(0,0,0)
-    frame.BackgroundTransparency = getgenv().BlackModeConfig.overlayTransparency or 0
-    frame.BorderSizePixel = 0
-    frame.ZIndex = getgenv().BlackModeConfig.overlayZIndex or 100000
-    frame.Parent = gui
+    overlayFrame = Instance.new("Frame")
+    overlayFrame.Size = UDim2.new(1,0,1,0)
+    overlayFrame.BackgroundColor3 = Color3.new(0,0,0)
+    overlayFrame.BackgroundTransparency = 0
+    overlayFrame.BorderSizePixel = 0
+    overlayFrame.Active = false -- PENTING (tidak tangkap input)
+    overlayFrame.Selectable = false
+    overlayFrame.Parent = overlayGui
 
-    local usernameLabel = Instance.new("TextLabel")
-    usernameLabel.Size = UDim2.new(0,300,0,35)
-    usernameLabel.Position = UDim2.new(0.5,-150,0,10)
-    usernameLabel.BackgroundTransparency = 1
-    usernameLabel.TextColor3 = Color3.new(1,1,1)
-    usernameLabel.Font = Enum.Font.SourceSansBold
-    usernameLabel.TextSize = 26
-    usernameLabel.Text = LocalPlayer.Name
-    usernameLabel.ZIndex = frame.ZIndex + 1
-    usernameLabel.Parent = gui
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(0,400,0,50)
+    title.Position = UDim2.new(0.5,-200,0.5,-40)
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.fromRGB(0,255,255)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 28
+    title.Text = "👁️ KAMI•APA 👁️"
+    title.Parent = overlayGui
 
-    local fpsLabel = Instance.new("TextLabel")
-    fpsLabel.Size = UDim2.new(0,300,0,35)
-    fpsLabel.Position = UDim2.new(0.5,-150,1,-50)
+
+    local userLabel = Instance.new("TextLabel")
+    userLabel.Size = UDim2.new(0,300,0,30)
+    userLabel.Position = UDim2.new(0.5,-150,0,10)
+    userLabel.BackgroundTransparency = 1
+    userLabel.TextColor3 = Color3.new(1,1,1)
+    userLabel.Font = Enum.Font.GothamBold
+    userLabel.TextSize = 22
+    userLabel.Text = LocalPlayer.Name
+    userLabel.Parent = overlayGui
+
+
+    fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Size = UDim2.new(0,300,0,30)
+    fpsLabel.Position = UDim2.new(0.5,-150,1,-40)
     fpsLabel.BackgroundTransparency = 1
     fpsLabel.TextColor3 = Color3.new(1,1,1)
-    fpsLabel.Font = Enum.Font.SourceSansBold
-    fpsLabel.TextSize = 26
+    fpsLabel.Font = Enum.Font.GothamBold
+    fpsLabel.TextSize = 22
     fpsLabel.Text = "FPS: 0"
-    fpsLabel.ZIndex = frame.ZIndex + 1
-    fpsLabel.Parent = gui
+    fpsLabel.Parent = overlayGui
 
-    local mainLabel = Instance.new("TextLabel")
-    mainLabel.Size = UDim2.new(0,400,0,60)
-    mainLabel.Position = UDim2.new(0.5,-200,0.5,-60)
-    mainLabel.BackgroundTransparency = 1
-    mainLabel.TextColor3 = Color3.fromRGB(0,255,255)
-    mainLabel.Font = Enum.Font.SourceSansBold
-    mainLabel.TextSize = 30
-    mainLabel.Text = "👁️ KAMI•APA 👁️"
-    mainLabel.ZIndex = frame.ZIndex + 1
-    mainLabel.Parent = gui
-
-
-    local promoLabel = Instance.new("TextLabel")
-    promoLabel.Size = UDim2.new(0,400,0,30)
-    promoLabel.Position = UDim2.new(0.5,-200,0.5,-25)
-    promoLabel.BackgroundTransparency = 1
-    promoLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    promoLabel.Font = Enum.Font.SourceSansItalic
-    promoLabel.TextSize = 18
-    promoLabel.Text = "Buy Item Roblox In Here"
-    promoLabel.ZIndex = frame.ZIndex + 1
-    promoLabel.Parent = gui
-
-    local discordLabel = Instance.new("TextLabel")
-    discordLabel.Size = UDim2.new(0,400,0,30)
-    discordLabel.Position = UDim2.new(0.5,-200,0.5,5)
-    discordLabel.BackgroundTransparency = 1
-    discordLabel.TextColor3 = Color3.fromRGB(180,180,180)
-    discordLabel.Font = Enum.Font.SourceSans
-    discordLabel.TextSize = 20
-    discordLabel.Text = "discord.gg/kamiapa"
-    discordLabel.ZIndex = frame.ZIndex + 1
-    discordLabel.Parent = gui
-
-    local controlGui = Instance.new("ScreenGui")
-    controlGui.Name = "KAMI•APAToggleGUI"
-    controlGui.DisplayOrder = 1000000
-    controlGui.IgnoreGuiInset = true
-    controlGui.ResetOnSpawn = false
-    controlGui.Parent = game:GetService("CoreGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 200, 0, 40)
-    button.Position = UDim2.new(0.5, -100, 0.9, 0)
-    button.Text = "🔘 Black Screen: ON"
-    button.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Size = UDim2.new(0,200,0,40)
+    button.Position = UDim2.new(0.5,-100,0.9,0)
+    button.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    button.TextColor3 = Color3.new(1,1,1)
     button.Font = Enum.Font.GothamBold
-    button.TextSize = 20
-    button.ZIndex = controlGui.DisplayOrder + 1
-    button.Parent = controlGui
+    button.TextSize = 18
+    button.Text = overlayEnabled and "Black Screen: ON" or "Black Screen: OFF"
+    button.Parent = overlayGui
 
     button.MouseButton1Click:Connect(function()
-        getgenv().BlackModeConfig.enableBlackOverlay = not getgenv().BlackModeConfig.enableBlackOverlay
-        frame.Visible = getgenv().BlackModeConfig.enableBlackOverlay
-        button.Text = getgenv().BlackModeConfig.enableBlackOverlay and "🔘 Black Screen: ON" or "⚪ Black Screen: OFF"
+        overlayEnabled = not overlayEnabled
+        overlayFrame.Visible = overlayEnabled
+        button.Text = overlayEnabled and "Black Screen: ON" or "Black Screen: OFF"
     end)
 
-    local RunService = game:GetService("RunService")
-    local frameCount, lastUpdate = 0, tick()
-    RunService.RenderStepped:Connect(function()
-        frameCount += 1
-        local now = tick()
-        if now - lastUpdate >= 1 then
-            local fps = math.floor(frameCount / (now - lastUpdate))
+    overlayFrame.Visible = overlayEnabled
+end
+
+
+local frameCount = 0
+local lastUpdate = tick()
+
+RunService.RenderStepped:Connect(function()
+    frameCount += 1
+    local now = tick()
+    if now - lastUpdate >= 1 then
+        local fps = math.floor(frameCount / (now - lastUpdate))
+        if fpsLabel then
             fpsLabel.Text = "FPS: " .. fps
-            frameCount = 0
-            lastUpdate = now
         end
-    end)
-end
-
-local overlayOn = false
-local boosterOn = false
-
-local function toggleOverlay()
-    overlayOn = not overlayOn
-    if overlayOn then
-        createOverlay()
-    else
-        local mainGui = game:GetService("CoreGui"):FindFirstChild("KAMI•APABlackModeGUI")
-        if mainGui then mainGui:Destroy() end
-        getgenv()._CicaOverlayCreated = nil
-    end
-end
-
-local function toggleBooster()
-    boosterOn = not boosterOn
-    applySafeOptimizations(boosterOn)
-end
-
-applySafeOptimizations(true)
-boosterOn = true
-if getgenv().BlackModeConfig.enableBlackOverlay then
-    toggleOverlay()
-end
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == getgenv().BlackModeConfig.toggleOverlayKey then
-        toggleOverlay()
-    elseif input.KeyCode == getgenv().BlackModeConfig.toggleBoosterKey then
-        toggleBooster()
+        frameCount = 0
+        lastUpdate = now
     end
 end)
 
 
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == getgenv().BlackScreenConfig.toggleKey then
+        overlayEnabled = not overlayEnabled
+        if overlayFrame then
+            overlayFrame.Visible = overlayEnabled
+        end
+    end
+end)
 
-
+-- START
+createOverlay()
