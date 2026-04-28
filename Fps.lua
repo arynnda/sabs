@@ -12,7 +12,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 getgenv().BlackScreenConfig = {
-    enableBlackOverlay = true,
+    enableBlackOverlay = false,
     overlayZIndex = 100000,
     overlayTransparency = 0,
     reduceGraphics = true,
