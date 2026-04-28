@@ -18,7 +18,7 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 6
 
-getgenv().GRAB_RADIUS = 12
+getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
@@ -249,10 +249,12 @@ local VIM = game:GetService("VirtualInputManager")
 
 task.spawn(function()
 	while true do
-		VIM:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-		task.wait(0.1)
-		VIM:SendKeyEvent(false, Enum.KeyCode.W, false, game)
-		task.wait(60)
+		VIM:SendMouseWheelEvent(0, 0, -1, game)
+		task.wait(0.5)
+		
+		VIM:SendMouseWheelEvent(0, 0, 1, game)
+
+		task.wait(300) -- 5 menit
 	end
 end)
 
