@@ -254,7 +254,7 @@ task.spawn(function()
 		
 		VIM:SendMouseWheelEvent(0, 0, 1, game)
 
-		task.wait(300) -- 5 menit
+		task.wait(300)
 	end
 end)
 
