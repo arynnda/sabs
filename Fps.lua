@@ -25,10 +25,9 @@ local function applySafeOptimizations(enable)
     pcall(function()
         if enable and settings and settings().Rendering then
             settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-            settings().Rendering.TextureQuality = Enum.TextureQuality.Level1
-        end
-    end)
-
+            pcall(function()
+                settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            end)
     local Lighting = game:GetService("Lighting")
 
     pcall(function()
