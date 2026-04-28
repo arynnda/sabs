@@ -7,7 +7,6 @@ repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
-local VIM = game:GetService("VirtualInputManager")
 
 local player = Players.LocalPlayer
 
