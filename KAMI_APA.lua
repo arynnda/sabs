@@ -291,49 +291,6 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 end
 
-task.spawn(function()
-	while getgenv().__KAMI_APA_ANTI_AFK do
-
-
-		local delayTime = math.random(300, 600)
-		task.wait(delayTime)
-
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-
-		if hum and hrp and hum.Health > 0
-			and not getgenv().currentTarget
-			and #getgenv().TARGET_QUEUE == 0
-			and not getgenv().IS_INTERACTING then
-
-			pcall(function()
-				local cam = workspace.CurrentCamera
-				local pos = Vector2.new(
-					math.random(200, 800),
-					math.random(200, 600)
-				)
-
-
-				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
-				task.wait(0.1)
-				VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
-
-				if cam then
-					cam.CFrame = cam.CFrame * CFrame.Angles(
-						0,
-						math.rad(math.random(-5,5)),
-						0
-					)
-				end
-			end)
-
-		end
-
-	end
-end)
-
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
