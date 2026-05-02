@@ -297,7 +297,7 @@ end)
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 150
+	local AUTO_RESET_DELAY = 600
 
 	task.spawn(function()
 
@@ -444,7 +444,7 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.ActionText == "Purchase" then
 						
 						pcall(function()
-							fireproximityprompt(v, 0)
+							fireproximityprompt(v, 1)
 						end)
 
 						task.wait(0.2)
