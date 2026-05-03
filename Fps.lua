@@ -162,7 +162,7 @@ local function createOverlay()
     discordLabel.TextColor3 = Color3.fromRGB(180,180,180)
     discordLabel.Font = Enum.Font.SourceSans
     discordLabel.TextSize = 20
-    discordLabel.Text = "discord.gg/icestore"
+    discordLabel.Text = "discord.gg/kami•apa"
     discordLabel.ZIndex = frame.ZIndex + 1
     discordLabel.Parent = gui
 
