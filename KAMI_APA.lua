@@ -217,52 +217,59 @@ task.spawn(function()
 
 end)
 
-task.wait(10)
-
 local TARGETS = {
-	Vector3.new( -410.9753723144531, -6.501978874206543, 71.8466796875),
-	Vector3.new(-436.86114501953125, -6.251975059509277, 64.4058723449707),
-	Vector3.new(-412.4242858886719, -6.501978874206543, 60.9798698425293),
+	Vector3.new(-410.9753, -6.50, 71.84),
+	Vector3.new(-436.8611, -6.25, 64.40),
+	Vector3.new(-412.4242, -6.50, 60.97),
 }
 
 local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
-local TARGET_DELAY = 2
-local LOOP_IDLE = 90
+local WAIT_AT_LAST = 600 
 
 local function getChar()
 	local char = player.Character or player.CharacterAdded:Wait()
 	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
 end
 
-task.spawn(function()
+local function moveTo(humanoid, root, target)
+	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+	humanoid:MoveTo(goal)
 
-while true do
-	local humanoid, root = getChar()
-
-	for i, target in ipairs(TARGETS) do
-		if humanoid.Health <= 0 then break end
-
-		print("🎯 Target", i)
-
-		local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-		humanoid:MoveTo(goal)
-
-		local start = tick()
-		while tick() - start < MOVE_TIMEOUT do
-			if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-				break
-			end
-			task.wait(0.1)
+	while true do
+		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
+			break
 		end
-
-		task.wait(TARGET_DELAY)
+		if humanoid.Health <= 0 then
+			break
+		end
+		task.wait()
 	end
-
-	task.wait(LOOP_IDLE)
 end
 
+task.spawn(function()
+	while true do
+		local humanoid, root = getChar()
+
+		for i, target in ipairs(TARGETS) do
+			if humanoid.Health <= 0 then break end
+
+			print("🎯 Target", i)
+			moveTo(humanoid, root, target)
+
+			if i == 3 then
+				print("🛑 Diam di target terakhir...")
+				task.wait(WAIT_AT_LAST)
+			end
+		end
+
+		if humanoid.Health > 0 then
+			humanoid.Health = 0
+		end
+
+		task.wait(3)
+	end
 end)
+
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
