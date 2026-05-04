@@ -17,7 +17,7 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 12
 
-getgenv().GRAB_RADIUS = 25
+getgenv().GRAB_RADIUS = 12
 getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
@@ -359,7 +359,7 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.ActionText == "Purchase" then
 						
 						pcall(function()
-							fireproximityprompt(v, 1)
+							fireproximityprompt(v, 2)
 						end)
 
 						task.wait(0.2)
