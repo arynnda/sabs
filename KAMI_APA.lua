@@ -224,50 +224,84 @@ local TARGETS = {
 }
 
 local ARRIVE_DISTANCE = 3
-local WAIT_AT_LAST = 600 
+local WAIT_AT_LAST = 600
+local CHECK_INTERVAL = 0.5
+
+getgenv().currentTargetIndex = 1
 
 local function getChar()
 	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
+	return char, char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
 end
 
-local function moveTo(humanoid, root, target)
+local function moveToTarget(hum, root, index)
+	local target = TARGETS[index]
 	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-	humanoid:MoveTo(goal)
 
-	while true do
+	hum:MoveTo(goal)
+
+	while hum.Health > 0 do
 		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-			break
-		end
-		if humanoid.Health <= 0 then
-			break
+			return true
 		end
 		task.wait()
 	end
+
+	return false
 end
 
 task.spawn(function()
 	while true do
-		local humanoid, root = getChar()
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+
+		if hum and root and hum.Health > 0 then
+			local index = getgenv().currentTargetIndex
+			local target = TARGETS[index]
+
+			if target then
+				local goal = Vector3.new(target.X, root.Position.Y, target.Z)
+
+				if (root.Position - goal).Magnitude > ARRIVE_DISTANCE + 2 then
+					hum:MoveTo(goal)
+				end
+			end
+		end
+
+		task.wait(CHECK_INTERVAL)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		local char, hum, root = getChar()
 
 		for i, target in ipairs(TARGETS) do
-			if humanoid.Health <= 0 then break end
+			if hum.Health <= 0 then break end
 
+			getgenv().currentTargetIndex = i
 			print("🎯 Target", i)
-			moveTo(humanoid, root, target)
+
+			local reached = moveToTarget(hum, root, i)
+			if not reached then break end
 
 			if i == 3 then
-				print("🛑 Diam di target terakhir...")
+				print("🛑 Diam di target terakhir")
 				task.wait(WAIT_AT_LAST)
 			end
 		end
 
-		if humanoid.Health > 0 then
-			humanoid.Health = 0
+		if hum.Health > 0 then
+			hum.Health = 0
 		end
 
 		task.wait(3)
 	end
+end)
+
+player.CharacterAdded:Connect(function()
+	getgenv().currentTargetIndex = 1
 end)
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
