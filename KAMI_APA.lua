@@ -1,4 +1,4 @@
-task.wait(5)
+task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -217,6 +217,7 @@ task.spawn(function()
 
 end)
 
+
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
@@ -275,10 +276,13 @@ end)
 
 task.spawn(function()
 	while true do
+		getgenv()._SESSION_ID += 1
+		local mySession = getgenv()._SESSION_ID
+
 		local char, hum, root = getChar()
 
 		for i, target in ipairs(TARGETS) do
-			if hum.Health <= 0 then break end
+			if hum.Health <= 0 or mySession ~= getgenv()._SESSION_ID then break end
 
 			getgenv().currentTargetIndex = i
 			print("🎯 Target", i)
@@ -287,12 +291,17 @@ task.spawn(function()
 			if not reached then break end
 
 			if i == 3 then
-				print("🛑 Diam di target terakhir")
-				task.wait(WAIT_AT_LAST)
+				print("🛑 Diam di target terakhir...")
+
+				local start = tick()
+				while tick() - start < WAIT_AT_LAST do
+					if mySession ~= getgenv()._SESSION_ID then break end
+					task.wait(1)
+				end
 			end
 		end
 
-		if hum.Health > 0 then
+		if hum.Health > 0 and mySession == getgenv()._SESSION_ID then
 			hum.Health = 0
 		end
 
@@ -302,6 +311,7 @@ end)
 
 player.CharacterAdded:Connect(function()
 	getgenv().currentTargetIndex = 1
+	getgenv()._SESSION_ID += 1
 end)
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
