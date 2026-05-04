@@ -217,7 +217,6 @@ task.spawn(function()
 
 end)
 
-
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
@@ -225,121 +224,81 @@ local TARGETS = {
 }
 
 local ARRIVE_DISTANCE = 3
-local WAIT_AT_LAST = 600
-local CHECK_INTERVAL = 0.5
+local MOVE_TIMEOUT = 5
+local WAIT_AT_LAST = 600 
 
-getgenv().currentTargetIndex = 1
+getgenv().__SESSION_ID = 0
 
 local function getChar()
 	local char = player.Character or player.CharacterAdded:Wait()
-	return char, char:WaitForChild("Humanoid"), char:WaitForChild("HumanoidRootPart")
+	local hum = char:WaitForChild("Humanoid")
+	local root = char:WaitForChild("HumanoidRootPart")
+	return hum, root
 end
 
-local function moveToTarget(hum, root, index)
-	local target = TARGETS[index]
+local function moveTo(hum, root, target)
 	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-
 	hum:MoveTo(goal)
 
-	while hum.Health > 0 do
+	local start = tick()
+
+	while tick() - start < MOVE_TIMEOUT do
 		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
 			return true
 		end
-		task.wait()
+		if hum.Health <= 0 then
+			return false
+		end
+		task.wait(0.1)
 	end
 
 	return false
 end
 
-task.spawn(function()
-	while true do
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
-
-		if hum and root and hum.Health > 0 then
-			local index = getgenv().currentTargetIndex
-			local target = TARGETS[index]
-
-			if target then
-				local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-
-				if (root.Position - goal).Magnitude > ARRIVE_DISTANCE + 2 then
-					hum:MoveTo(goal)
-				end
-			end
-		end
-
-		task.wait(CHECK_INTERVAL)
-	end
-end)
-
-task.spawn(function()
-	while true do
-		getgenv()._SESSION_ID += 1
-		local mySession = getgenv()._SESSION_ID
-
-		local char, hum, root = getChar()
-
-		for i, target in ipairs(TARGETS) do
-			if hum.Health <= 0 or mySession ~= getgenv()._SESSION_ID then break end
-
-			getgenv().currentTargetIndex = i
-			print("🎯 Target", i)
-
-			local reached = moveToTarget(hum, root, i)
-			if not reached then break end
-
-			if i == 3 then
-				print("🛑 Diam di target terakhir...")
-
-				local start = tick()
-				while tick() - start < WAIT_AT_LAST do
-					if mySession ~= getgenv()._SESSION_ID then break end
-					task.wait(1)
-				end
-			end
-		end
-
-		if hum.Health > 0 and mySession == getgenv()._SESSION_ID then
-			hum.Health = 0
-		end
-
-		task.wait(3)
-	end
-end)
-
-player.CharacterAdded:Connect(function()
-	getgenv().currentTargetIndex = 1
-	getgenv()._SESSION_ID += 1
-end)
-
-if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
-
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 600
+local function startSystem()
+	getgenv().__SESSION_ID += 1
+	local mySession = getgenv().__SESSION_ID
 
 	task.spawn(function()
+		local hum, root = getChar()
 
-		while true do
+		for i, target in ipairs(TARGETS) do
+			if hum.Health <= 0 or mySession ~= getgenv().__SESSION_ID then return end
 
-			task.wait(AUTO_RESET_DELAY)
+			print("🎯 Target", i)
+			local reached = moveTo(hum, root, target)
 
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-
+			if not reached then return end
 		end
 
-	end)
+		local lastTarget = TARGETS[3]
 
+		local startWait = tick()
+
+		while tick() - startWait < WAIT_AT_LAST do
+			if hum.Health <= 0 or mySession ~= getgenv().__SESSION_ID then return end
+
+			local goal = lastTarget
+
+			if (root.Position - goal).Magnitude > ARRIVE_DISTANCE then
+				hum:MoveTo(goal)
+			end
+
+			task.wait(0.5)
+		end
+
+		if hum.Health > 0 and mySession == getgenv().__SESSION_ID then
+			hum.Health = 0
+		end
+	end)
 end
+
+startSystem()
+
+player.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	startSystem()
+end)
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
