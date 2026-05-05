@@ -17,7 +17,7 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 10
 
-getgenv().GRAB_RADIUS = 15
+getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
 getgenv().CHASE_DELAY = 0.5
 
@@ -122,6 +122,55 @@ workspace.DescendantAdded:Connect(function(o)
 	if o:IsA("Model") and isTarget(o) then
 		addTarget(o)
 	end
+
+end)
+
+local lastCash
+local cashValue
+
+local function setupCashWatcher()
+
+	local stats = player:FindFirstChild("leaderstats")
+	if not stats then return end
+
+	cashValue =
+		stats:FindFirstChild("Cash")
+		or stats:FindFirstChild("Money")
+		or stats:FindFirstChild("Coins")
+
+	if not cashValue then return end
+
+	lastCash = cashValue.Value
+
+	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+
+		if not getgenv().currentTarget then
+			lastCash = cashValue.Value
+			return
+		end
+
+		if cashValue.Value < lastCash then
+
+			local tgt = getgenv().currentTarget
+
+			if tgt then
+				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
+			end
+
+			getgenv().currentTarget = nil
+
+		end
+
+		lastCash = cashValue.Value
+
+	end)
+
+end
+
+task.spawn(function()
+
+	repeat task.wait(1) until player:FindFirstChild("leaderstats")
+	setupCashWatcher()
 
 end)
 
@@ -248,7 +297,7 @@ end)
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 600
+	local AUTO_RESET_DELAY = 150
 
 	task.spawn(function()
 
@@ -316,6 +365,69 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
+if not getgenv().__KAMI_APA_ANTI_AFK then
+	getgenv().__KAMI_APA_ANTI_AFK = true
+
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+
+
+	task.wait(10)
+
+
+	local function rand(a,b)
+		return math.random(a,b)
+	end
+
+	task.spawn(function()
+		while getgenv().__KAMI_APA_ANTI_AFK do
+
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+			if hum and hrp and hum.Health > 0 then
+
+
+				local moveDir = Vector3.new(
+					math.random(-1,1),
+					0,
+					math.random(-1,1)
+				)
+
+				hum:Move(moveDir, true)
+
+				task.wait(rand(1,3))
+
+				hum:Move(Vector3.zero, true)
+
+				if mouse1click then
+					mouse1click()
+				elseif mouse1press then
+					mouse1press()
+					task.wait(0.1)
+					mouse1release()
+				end
+
+				pcall(function()
+					local cam = workspace.CurrentCamera
+					if cam then
+						cam.CFrame = cam.CFrame * CFrame.Angles(
+							0,
+							math.rad(rand(-10,10)),
+							0
+						)
+					end
+				end)
+
+			end
+
+			task.wait(rand(60,120)) -- 1 - 2 menit
+
+		end
+	end)
+end
+
 
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
@@ -331,15 +443,9 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.Enabled 
 					and v.ActionText == "Purchase" then
 						
-					getgenv().IS_INTERACTING = true
-
-					pcall(function()
-						fireproximityprompt(v, 0)
-					end)
-
-					task.wait(0.2)
-
-					getgenv().IS_INTERACTING = false
+						pcall(function()
+							fireproximityprompt(v, 0)
+						end)
 
 						task.wait(0.2)
 					end
