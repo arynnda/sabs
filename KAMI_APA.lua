@@ -334,7 +334,7 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					getgenv().IS_INTERACTING = true
 
 					pcall(function()
-						fireproximityprompt(v, 1)
+						fireproximityprompt(v, 0)
 					end)
 
 					task.wait(0.2)
