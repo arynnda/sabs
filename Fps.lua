@@ -17,3 +17,4 @@ a.DescendantAdded:Connect(function(v)
     pcall(function()
         v.Transparency = 1
     end)
+end)
