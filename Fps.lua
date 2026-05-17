@@ -1,3 +1,4 @@
+task.wait(2)
 for i,v in next, workspace:GetDescendants() do
     pcall(function()
         v.Transparency = 1
