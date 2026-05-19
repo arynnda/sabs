@@ -16,10 +16,23 @@ gui.Parent = CoreGui
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, 0, 1, 0)
-frame.Position = UDim2.new(0, 0, 0, 0)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-
-frame.BackgroundTransparency = 0
-
 frame.BorderSizePixel = 0
 frame.Parent = gui
+
+local text = Instance.new("TextLabel")
+text.AnchorPoint = Vector2.new(0.5, 0.5)
+text.Position = UDim2.new(0.5, 0, 0.5, 0)
+text.Size = UDim2.new(0, 400, 0, 50)
+
+text.BackgroundTransparency = 1
+
+text.Text = player.Name
+-- atau:
+-- text.Text = player.DisplayName
+
+text.TextColor3 = Color3.fromRGB(255, 255, 255)
+text.TextSize = 24
+text.Font = Enum.Font.GothamBold
+
+text.Parent = frame
