@@ -1,10 +1,16 @@
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+
 local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
+local Terrain = workspace:FindFirstChildOfClass("Terrain")
 
 pcall(function()
-    CoreGui:FindFirstChild("BlackOverlay"):Destroy()
+	CoreGui:FindFirstChild("BlackOverlay"):Destroy()
 end)
 
 local gui = Instance.new("ScreenGui")
@@ -26,11 +32,69 @@ text.Position = UDim2.new(0.5, 0, 0.5, 0)
 text.Size = UDim2.new(0, 400, 0, 50)
 
 text.BackgroundTransparency = 1
-
 text.Text = player.Name
-
 text.TextColor3 = Color3.fromRGB(255, 255, 255)
-text.TextSize = 34
+text.TextSize = 40
 text.Font = Enum.Font.GothamBold
 
 text.Parent = frame
+
+
+pcall(function()
+	Lighting.GlobalShadows = false
+	Lighting.FogEnd = 9e9
+	Lighting.Brightness = 1
+	Lighting.EnvironmentDiffuseScale = 0
+	Lighting.EnvironmentSpecularScale = 0
+end)
+
+for _, v in pairs(Lighting:GetChildren()) do
+	if v:IsA("BlurEffect")
+	or v:IsA("SunRaysEffect")
+	or v:IsA("BloomEffect")
+	or v:IsA("ColorCorrectionEffect")
+	or v:IsA("DepthOfFieldEffect")
+	or v:IsA("Atmosphere") then
+		v:Destroy()
+	end
+end
+
+pcall(function()
+	Terrain.WaterWaveSize = 0
+	Terrain.WaterWaveSpeed = 0
+	Terrain.WaterReflectance = 0
+	Terrain.WaterTransparency = 1
+end)
+
+for _, obj in pairs(workspace:GetDescendants()) do
+	pcall(function()
+
+		if obj:IsA("BasePart") then
+			obj.Material = Enum.Material.Plastic
+			obj.Reflectance = 0
+			obj.CastShadow = false
+		end
+
+		if obj:IsA("Decal")
+		or obj:IsA("Texture") then
+			obj.Transparency = 1
+		end
+
+		if obj:IsA("ParticleEmitter")
+		or obj:IsA("Trail")
+		or obj:IsA("Smoke")
+		or obj:IsA("Fire")
+		or obj:IsA("Sparkles") then
+			obj.Enabled = false
+		end
+
+		if obj:IsA("Explosion") then
+			obj.BlastPressure = 0
+			obj.BlastRadius = 0
+		end
+	end)
+end
+
+pcall(function()
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+end)
