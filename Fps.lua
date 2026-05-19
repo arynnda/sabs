@@ -28,8 +28,6 @@ text.Size = UDim2.new(0, 400, 0, 50)
 text.BackgroundTransparency = 1
 
 text.Text = player.Name
--- atau:
--- text.Text = player.DisplayName
 
 text.TextColor3 = Color3.fromRGB(255, 255, 255)
 text.TextSize = 24
