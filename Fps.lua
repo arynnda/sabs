@@ -30,7 +30,7 @@ text.BackgroundTransparency = 1
 text.Text = player.Name
 
 text.TextColor3 = Color3.fromRGB(255, 255, 255)
-text.TextSize = 24
+text.TextSize = 34
 text.Font = Enum.Font.GothamBold
 
 text.Parent = frame
