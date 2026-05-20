@@ -342,6 +342,33 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
+if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
+
+	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
+	local AUTO_RESET_DELAY = 30
+
+	task.spawn(function()
+
+		while true do
+
+			task.wait(AUTO_RESET_DELAY)
+
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+			if hum and hum.Health > 0 then
+				if not getgenv().currentTarget
+					and #getgenv().TARGET_QUEUE == 0 then
+					hum.Health = 0
+				end
+			end
+
+		end
+
+	end)
+
+end
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
@@ -385,3 +412,4 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 		end)
 	end
 end)
+
