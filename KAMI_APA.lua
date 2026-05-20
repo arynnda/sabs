@@ -218,14 +218,12 @@ task.spawn(function()
 end)
 
 local TARGETS = {
-	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
-	Vector3.new(-412.4242, -6.50, 60.97),
 }
 
 local ARRIVE_DISTANCE = 3
 local MOVE_TIMEOUT = 5
-local WAIT_AT_LAST = 1200 
+local WAIT_AT_LAST = 60
 
 getgenv().__SESSION_ID = 0
 
