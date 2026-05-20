@@ -21,7 +21,7 @@ gui.Name = "BlackOverlay"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 999999
-gui.Enabled = true
+gui.Enabled = false
 gui.Parent = CoreGui
 
 local frame = Instance.new("Frame")
@@ -107,12 +107,12 @@ end)
 
 getgenv().BlackScreenOn = function()
 	if gui then
-		gui.Enabled = false
+		gui.Enabled = true
 	end
 end
 
 getgenv().BlackScreenOff = function()
 	if gui then
-		gui.Enabled = true
+		gui.Enabled = false
 	end
 end
