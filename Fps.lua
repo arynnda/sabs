@@ -93,24 +93,27 @@ for _, obj in pairs(Workspace:GetDescendants()) do
 			end
 		end
 
-if obj:IsA("Decal")
-or obj:IsA("Texture") then
-	obj.Transparency = 1
-end
+		if obj:IsA("Decal")
+		or obj:IsA("Texture") then
+			obj.Transparency = 1
+		end
 
-if obj:IsA("ParticleEmitter")
-or obj:IsA("Trail")
-or obj:IsA("Smoke")
-or obj:IsA("Fire")
-or obj:IsA("Sparkles")
-or obj:IsA("Beam") then
-	obj.Enabled = false
-end
+		if obj:IsA("ParticleEmitter")
+		or obj:IsA("Trail")
+		or obj:IsA("Smoke")
+		or obj:IsA("Fire")
+		or obj:IsA("Sparkles")
+		or obj:IsA("Beam") then
+			obj.Enabled = false
+		end
 
-if obj:IsA("SpecialMesh")
-or obj:IsA("MeshPart") then
-	pcall(function()
-		obj.TextureID = ""
+		if obj:IsA("SpecialMesh")
+		or obj:IsA("MeshPart") then
+			pcall(function()
+				obj.TextureID = ""
+			end)
+		end
+
 	end)
 end
 
@@ -119,7 +122,6 @@ pcall(function()
 		material:Destroy()
 	end
 end)
-
 getgenv().BlackScreenOn = function()
 	if gui then
 		gui.Enabled = true
