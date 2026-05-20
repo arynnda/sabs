@@ -93,34 +93,24 @@ for _, obj in pairs(Workspace:GetDescendants()) do
 			end
 		end
 
-		if obj:IsA("Decal")
-		or obj:IsA("Texture") then
-			obj:Destroy()
-		end
+if obj:IsA("Decal")
+or obj:IsA("Texture") then
+	obj.Transparency = 1
+end
 
-		if obj:IsA("ParticleEmitter")
-		or obj:IsA("Trail")
-		or obj:IsA("Smoke")
-		or obj:IsA("Fire")
-		or obj:IsA("Sparkles")
-		or obj:IsA("Beam") then
-			obj.Enabled = false
-		end
+if obj:IsA("ParticleEmitter")
+or obj:IsA("Trail")
+or obj:IsA("Smoke")
+or obj:IsA("Fire")
+or obj:IsA("Sparkles")
+or obj:IsA("Beam") then
+	obj.Enabled = false
+end
 
-		if obj:IsA("Explosion") then
-			obj.BlastPressure = 0
-			obj.BlastRadius = 0
-		end
-
-		if obj:IsA("SpecialMesh")
-		or obj:IsA("MeshPart") then
-			obj.TextureID = ""
-		end
-
-		if obj:IsA("UnionOperation") then
-			obj.UsePartColor = true
-		end
-
+if obj:IsA("SpecialMesh")
+or obj:IsA("MeshPart") then
+	pcall(function()
+		obj.TextureID = ""
 	end)
 end
 
