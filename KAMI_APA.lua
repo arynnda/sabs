@@ -1,4 +1,4 @@
-task.wait(5)
+task.wait(15)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
