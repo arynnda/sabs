@@ -5,9 +5,11 @@ end
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local MaterialService = game:GetService("MaterialService")
 
 local player = Players.LocalPlayer
-local Terrain = workspace:FindFirstChildOfClass("Terrain")
+local Terrain = Workspace:FindFirstChildOfClass("Terrain")
 
 pcall(function()
 	local old = CoreGui:FindFirstChild("BlackOverlay")
@@ -41,26 +43,41 @@ text.Text = player.Name
 text.TextColor3 = Color3.fromRGB(255, 255, 255)
 text.TextSize = 40
 text.Font = Enum.Font.GothamBold
-
 text.Parent = frame
 
 pcall(function()
-	Lighting.GlobalShadows = false
-	Lighting.FogEnd = 9e9
-	Lighting.Brightness = 1
-	Lighting.EnvironmentDiffuseScale = 0
-	Lighting.EnvironmentSpecularScale = 0
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 end)
 
+
+pcall(function()
+	Lighting.GlobalShadows = true
+
+	Lighting.Brightness = 0
+	Lighting.ClockTime = 0
+
+	Lighting.FogColor = Color3.fromRGB(0, 0, 0)
+	Lighting.FogStart = 0
+	Lighting.FogEnd = 80
+
+	Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+	Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
+
+	Lighting.EnvironmentDiffuseScale = 0
+	Lighting.EnvironmentSpecularScale = 0
+
+	Lighting.ExposureCompensation = -1
+end)
+
+
 for _, v in pairs(Lighting:GetChildren()) do
-	if v:IsA("BlurEffect")
-	or v:IsA("SunRaysEffect")
-	or v:IsA("BloomEffect")
-	or v:IsA("ColorCorrectionEffect")
-	or v:IsA("DepthOfFieldEffect")
-	or v:IsA("Atmosphere") then
-		v:Destroy()
-	end
+	pcall(function()
+		if v:IsA("PostEffect")
+		or v:IsA("Sky")
+		or v:IsA("Atmosphere") then
+			v:Destroy()
+		end
+	end)
 end
 
 pcall(function()
@@ -69,16 +86,21 @@ pcall(function()
 		Terrain.WaterWaveSpeed = 0
 		Terrain.WaterReflectance = 0
 		Terrain.WaterTransparency = 1
+		Terrain.Decoration = false
 	end
 end)
 
-for _, obj in pairs(workspace:GetDescendants()) do
+for _, obj in pairs(Workspace:GetDescendants()) do
 	pcall(function()
 
 		if obj:IsA("BasePart") then
 			obj.Material = Enum.Material.Plastic
 			obj.Reflectance = 0
 			obj.CastShadow = false
+
+			if obj.Transparency >= 0.95 then
+				obj:Destroy()
+			end
 		end
 
 		if obj:IsA("Decal")
@@ -90,20 +112,33 @@ for _, obj in pairs(workspace:GetDescendants()) do
 		or obj:IsA("Trail")
 		or obj:IsA("Smoke")
 		or obj:IsA("Fire")
-		or obj:IsA("Sparkles") then
+		or obj:IsA("Sparkles")
+		or obj:IsA("Beam") then
 			obj.Enabled = false
+		end
+
+		if obj:IsA("SpecialMesh")
+		or obj:IsA("MeshPart") then
+			pcall(function()
+				obj.TextureID = ""
+			end)
 		end
 
 		if obj:IsA("Explosion") then
 			obj.BlastPressure = 0
 			obj.BlastRadius = 0
 		end
+
 	end)
 end
 
+
 pcall(function()
-	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+	for _, material in pairs(MaterialService:GetChildren()) do
+		material:Destroy()
+	end
 end)
+
 
 getgenv().BlackScreenOn = function()
 	if gui then
