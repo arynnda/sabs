@@ -23,7 +23,7 @@ gui.Name = "BlackOverlay"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 999999
-gui.Enabled = false
+gui.Enabled = true
 gui.Parent = CoreGui
 
 local frame = Instance.new("Frame")
