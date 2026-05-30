@@ -1,4 +1,3 @@
-task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -125,54 +124,6 @@ workspace.DescendantAdded:Connect(function(o)
 
 end)
 
-local lastCash
-local cashValue
-
-local function setupCashWatcher()
-
-	local stats = player:FindFirstChild("leaderstats")
-	if not stats then return end
-
-	cashValue =
-		stats:FindFirstChild("Cash")
-		or stats:FindFirstChild("Money")
-		or stats:FindFirstChild("Coins")
-
-	if not cashValue then return end
-
-	lastCash = cashValue.Value
-
-	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
-
-		if not getgenv().currentTarget then
-			lastCash = cashValue.Value
-			return
-		end
-
-		if cashValue.Value < lastCash then
-
-			local tgt = getgenv().currentTarget
-
-			if tgt then
-				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
-			end
-
-			getgenv().currentTarget = nil
-
-		end
-
-		lastCash = cashValue.Value
-
-	end)
-
-end
-
-task.spawn(function()
-
-	repeat task.wait(1) until player:FindFirstChild("leaderstats")
-	setupCashWatcher()
-
-end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
