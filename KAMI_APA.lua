@@ -293,32 +293,31 @@ task.spawn(function()
 
 end)
 
-
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
+    getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
 
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 30
+    local FIRST_RESET_DELAY = 30
+    local NEXT_RESET_DELAY = 600
 
-	task.spawn(function()
+    task.spawn(function()
+        local firstReset = true
 
-		while true do
+        while true do
+            task.wait(firstReset and FIRST_RESET_DELAY or NEXT_RESET_DELAY)
 
-			task.wait(AUTO_RESET_DELAY)
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                if not getgenv().currentTarget
+                    and #getgenv().TARGET_QUEUE == 0 then
 
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-
-		end
-
-	end)
-
+                    hum.Health = 0
+                    firstReset = false
+                end
+            end
+        end
+    end)
 end
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
