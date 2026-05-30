@@ -106,5 +106,3 @@ workspace.DescendantAdded:Connect(function(v)
 end)
 
 RunService:Set3dRenderingEnabled(true)
-
-print("FPS BOOST OPTIMIZATION LOADED")
