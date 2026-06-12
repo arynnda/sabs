@@ -244,6 +244,77 @@ task.spawn(function()
 
 end)
 
+if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
+
+	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
+	local AUTO_RESET_DELAY = 600
+
+	task.spawn(function()
+
+		while true do
+
+			task.wait(AUTO_RESET_DELAY)
+
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+			if hum and hum.Health > 0 then
+				if not getgenv().currentTarget
+					and #getgenv().TARGET_QUEUE == 0 then
+					hum.Health = 0
+				end
+			end
+
+		end
+
+	end)
+
+end
+
+if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
+	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
+
+	local function equipSpeedCoil()
+
+		local char = player.Character
+		if not char then return end
+
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if not backpack then return end
+
+		for _,tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
+				hum:EquipTool(tool)
+				break
+			end
+		end
+
+	end
+
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		equipSpeedCoil()
+	end)
+
+	if player:FindFirstChildOfClass("Backpack") then
+		player.Backpack.ChildAdded:Connect(function(tool)
+			task.wait(0.2)
+			equipSpeedCoil()
+		end)
+	end
+
+	task.spawn(function()
+		while true do
+			equipSpeedCoil()
+			task.wait(1)
+		end
+	end)
+
+end
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
