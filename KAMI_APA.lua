@@ -1,3 +1,4 @@
+task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -16,9 +17,9 @@ getgenv().SEEN_UNIT_INSTANCES = {}
 
 getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
-getgenv().GRAB_RADIUS = 5
+getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
-getgenv().CHASE_DELAY = 2
+getgenv().CHASE_DELAY = 0.5
 
 getgenv().TARGET_QUEUE = {}
 getgenv().currentTarget = nil
@@ -124,6 +125,54 @@ workspace.DescendantAdded:Connect(function(o)
 
 end)
 
+local lastCash
+local cashValue
+
+local function setupCashWatcher()
+
+	local stats = player:FindFirstChild("leaderstats")
+	if not stats then return end
+
+	cashValue =
+		stats:FindFirstChild("Cash")
+		or stats:FindFirstChild("Money")
+		or stats:FindFirstChild("Coins")
+
+	if not cashValue then return end
+
+	lastCash = cashValue.Value
+
+	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+
+		if not getgenv().currentTarget then
+			lastCash = cashValue.Value
+			return
+		end
+
+		if cashValue.Value < lastCash then
+
+			local tgt = getgenv().currentTarget
+
+			if tgt then
+				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
+			end
+
+			getgenv().currentTarget = nil
+
+		end
+
+		lastCash = cashValue.Value
+
+	end)
+
+end
+
+task.spawn(function()
+
+	repeat task.wait(1) until player:FindFirstChild("leaderstats")
+	setupCashWatcher()
+
+end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
@@ -244,6 +293,7 @@ task.spawn(function()
 
 end)
 
+
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
@@ -314,6 +364,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	end)
 
 end
+
 
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
