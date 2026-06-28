@@ -224,7 +224,7 @@ local TARGETS = {
 }
 
 local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 5
+local MOVE_TIMEOUT = 10
 local WAIT_AT_LAST = 1200 
 
 getgenv().__SESSION_ID = 0
