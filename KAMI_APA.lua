@@ -220,7 +220,6 @@ end)
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
-	Vector3.new(-407.900, -6.502, 69.364),
 }
 
 local ARRIVE_DISTANCE = 3
@@ -271,7 +270,7 @@ local function startSystem()
 			if not reached then return end
 		end
 
-		local lastTarget = TARGETS[3]
+		local lastTarget = TARGETS[2]
 
 		local startWait = tick()
 
