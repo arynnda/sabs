@@ -15,7 +15,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 12
+getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -125,6 +125,54 @@ workspace.DescendantAdded:Connect(function(o)
 
 end)
 
+local lastCash
+local cashValue
+
+local function setupCashWatcher()
+
+	local stats = player:FindFirstChild("leaderstats")
+	if not stats then return end
+
+	cashValue =
+		stats:FindFirstChild("Cash")
+		or stats:FindFirstChild("Money")
+		or stats:FindFirstChild("Coins")
+
+	if not cashValue then return end
+
+	lastCash = cashValue.Value
+
+	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+
+		if not getgenv().currentTarget then
+			lastCash = cashValue.Value
+			return
+		end
+
+		if cashValue.Value < lastCash then
+
+			local tgt = getgenv().currentTarget
+
+			if tgt then
+				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
+			end
+
+			getgenv().currentTarget = nil
+
+		end
+
+		lastCash = cashValue.Value
+
+	end)
+
+end
+
+task.spawn(function()
+
+	repeat task.wait(1) until player:FindFirstChild("leaderstats")
+	setupCashWatcher()
+
+end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
@@ -217,87 +265,34 @@ task.spawn(function()
 
 end)
 
-local TARGETS = {
-	Vector3.new(-410.9753, -6.50, 71.84),
-	Vector3.new(-436.8611, -6.25, 64.40),
-}
+local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+local RETURN_DISTANCE = 5
 
-local ARRIVE_DISTANCE = 3
-local MOVE_TIMEOUT = 10
-local WAIT_AT_LAST = 1200 
+task.spawn(function()
 
-getgenv().__SESSION_ID = 0
+	while true do
 
-local function getChar()
-	local char = player.Character or player.CharacterAdded:Wait()
-	local hum = char:WaitForChild("Humanoid")
-	local root = char:WaitForChild("HumanoidRootPart")
-	return hum, root
-end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local root = char and char:FindFirstChild("HumanoidRootPart")
 
-local function moveTo(hum, root, target)
-	local goal = Vector3.new(target.X, root.Position.Y, target.Z)
-	hum:MoveTo(goal)
+		if hum and root and hum.Health > 0 then
 
-	local start = tick()
+			local target =
+				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
 
-	while tick() - start < MOVE_TIMEOUT do
-		if (root.Position - goal).Magnitude <= ARRIVE_DISTANCE then
-			return true
-		end
-		if hum.Health <= 0 then
-			return false
-		end
-		task.wait(0.1)
-	end
-
-	return false
-end
-
-local function startSystem()
-	getgenv().__SESSION_ID += 1
-	local mySession = getgenv().__SESSION_ID
-
-	task.spawn(function()
-		local hum, root = getChar()
-
-		for i, target in ipairs(TARGETS) do
-			if hum.Health <= 0 or mySession ~= getgenv().__SESSION_ID then return end
-
-			print("🎯 Target", i)
-			local reached = moveTo(hum, root, target)
-
-			if not reached then return end
-		end
-
-		local lastTarget = TARGETS[2]
-
-		local startWait = tick()
-
-		while tick() - startWait < WAIT_AT_LAST do
-			if hum.Health <= 0 or mySession ~= getgenv().__SESSION_ID then return end
-
-			local goal = lastTarget
-
-			if (root.Position - goal).Magnitude > ARRIVE_DISTANCE then
-				hum:MoveTo(goal)
+			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
+				hum:MoveTo(target)
 			end
 
-			task.wait(0.5)
 		end
 
-		if hum.Health > 0 and mySession == getgenv().__SESSION_ID then
-			hum.Health = 0
-		end
-	end)
-end
+		task.wait(1)
 
-startSystem()
+	end
 
-player.CharacterAdded:Connect(function()
-	task.wait(0.5)
-	startSystem()
 end)
+
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
@@ -370,6 +365,7 @@ if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 
 end
 
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
@@ -385,7 +381,7 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 					and v.ActionText == "Purchase" then
 						
 						pcall(function()
-							fireproximityprompt(v, 1)
+							fireproximityprompt(v, 0)
 						end)
 
 						task.wait(0.2)
@@ -397,19 +393,3 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 		end
 	end)
 end
-
-if getgenv().AUTO_E then return end
-getgenv().AUTO_E = true
-
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.wait(0)
-print("AUTO E ACTIVE")
-
-ProximityPromptService.PromptShown:Connect(function(prompt)
-	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
-		task.wait(0.1)
-		pcall(function()
-			fireproximityprompt(prompt)
-		end)
-	end
-end)
