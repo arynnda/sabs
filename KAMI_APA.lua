@@ -388,3 +388,18 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 		end)
 	end
 end)
+
+if not getgenv().__KAMI_APA_AUTO_LEFT_CLICK then
+    getgenv().__KAMI_APA_AUTO_LEFT_CLICK = true
+
+    local CLICK_POS = Vector2.new(91,115)
+
+    task.spawn(function()
+        while getgenv().__KAMI_APA_AUTO_LEFT_CLICK do
+            VIM:SendMouseButtonEvent(CLICK_POS.X, CLICK_POS.Y, 0, true, game, 0)
+            task.wait()
+            VIM:SendMouseButtonEvent(CLICK_POS.X, CLICK_POS.Y, 0, false, game, 0)
+            task.wait(5)
+        end
+    end)
+end
