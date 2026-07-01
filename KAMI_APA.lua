@@ -220,10 +220,10 @@ end)
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
-	Vector3.new(-410.9753, -6.50, 71.84),
+	Vector3.new(-410.9753, -6.50, 71.84),	
 }
 
-local ARRIVE_DISTANCE = 3
+local ARRIVE_DISTANCE = 5
 local MOVE_TIMEOUT = 10
 local WAIT_AT_LAST = 1200 
 
@@ -300,6 +300,7 @@ player.CharacterAdded:Connect(function()
 	startSystem()
 end)
 
+
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
@@ -372,3 +373,18 @@ if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
 	end)
 end
 
+if getgenv().AUTO_E then return end
+getgenv().AUTO_E = true
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+task.wait(0)
+print("AUTO E ACTIVE")
+
+ProximityPromptService.PromptShown:Connect(function(prompt)
+	if prompt.ActionText == "Open" or string.find(prompt.ObjectText or "", "Open") then
+		task.wait(0.1)
+		pcall(function()
+			fireproximityprompt(prompt)
+		end)
+	end
+end)
