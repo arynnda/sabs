@@ -220,6 +220,7 @@ end)
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
 	Vector3.new(-436.8611, -6.25, 64.40),
+	Vector3.new(-410.9753, -6.50, 71.84),
 }
 
 local ARRIVE_DISTANCE = 3
@@ -270,7 +271,7 @@ local function startSystem()
 			if not reached then return end
 		end
 
-		local lastTarget = TARGETS[2]
+		local lastTarget = TARGETS[3]
 
 		local startWait = tick()
 
@@ -298,33 +299,6 @@ player.CharacterAdded:Connect(function()
 	task.wait(0.5)
 	startSystem()
 end)
-
-if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
-
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 120
-
-	task.spawn(function()
-
-		while true do
-
-			task.wait(AUTO_RESET_DELAY)
-
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
-
-		end
-
-	end)
-
-end
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
 	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
