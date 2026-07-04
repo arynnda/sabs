@@ -1,4 +1,3 @@
-task.wait(10)
 if getgenv().__KAMI_APA_MAIN_RUNNING then return end
 getgenv().__KAMI_APA_MAIN_RUNNING = true
 
@@ -15,7 +14,7 @@ getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
 getgenv().SEEN_UNIT_INSTANCES = {}
 
-getgenv().MAX_SPAWN_BEFORE_FORGET = 6
+getgenv().MAX_SPAWN_BEFORE_FORGET = 8
 
 getgenv().GRAB_RADIUS = 25
 getgenv().TARGET_TIMEOUT = 50
@@ -297,7 +296,7 @@ end)
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 120
+	local AUTO_RESET_DELAY = 600
 
 	task.spawn(function()
 
@@ -317,50 +316,6 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
 		end
 
-	end)
-
-end
-
-if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
-	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
-
-	local function equipSpeedCoil()
-
-		local char = player.Character
-		if not char then return end
-
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if not hum then return end
-
-		local backpack = player:FindFirstChildOfClass("Backpack")
-		if not backpack then return end
-
-		for _,tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
-				hum:EquipTool(tool)
-				break
-			end
-		end
-
-	end
-
-	player.CharacterAdded:Connect(function()
-		task.wait(1)
-		equipSpeedCoil()
-	end)
-
-	if player:FindFirstChildOfClass("Backpack") then
-		player.Backpack.ChildAdded:Connect(function(tool)
-			task.wait(0.2)
-			equipSpeedCoil()
-		end)
-	end
-
-	task.spawn(function()
-		while true do
-			equipSpeedCoil()
-			task.wait(1)
-		end
 	end)
 
 end
