@@ -218,8 +218,7 @@ end)
 
 local TARGETS = {
 	Vector3.new(-410.9753, -6.50, 71.84),
-	Vector3.new(-436.8611, -6.25, 64.40),
-	Vector3.new(-410.9753, -6.50, 71.84),	
+	Vector3.new(-436.8611, -6.25, 64.40),	
 }
 
 local ARRIVE_DISTANCE = 5
