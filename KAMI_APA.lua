@@ -8,7 +8,19 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 
-getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
+getgenv().TARGET_LIST = getgenv().TARGET_LIST or { }
+getgenv().LUCKY_BLOCK_IGNORE = getgenv().LUCKY_BLOCK_IGNORE or { "Mythic Lucky Block", "Brainrot God Lucky Block", "Los Lucky Block", "Admin Lucky Block", "Taco Lucky Block" }
+getgenv().LUCKY_BLOCK_CONFIG = getgenv().LUCKY_BLOCK_CONFIG or {
+    ENABLE = true,
+    KEYWORD = "Lucky Block"
+}
+
+getgenv().LUCKY_BLOCK_CONFIG.ENABLE =
+    getgenv().LUCKY_BLOCK_CONFIG.ENABLE ~= false
+
+getgenv().LUCKY_BLOCK_CONFIG.KEYWORD =
+    getgenv().LUCKY_BLOCK_CONFIG.KEYWORD or "lucky block"
+
 
 getgenv().FORGOTTEN_UNITS = {}
 getgenv().UNIT_SPAWN_COUNT = {}
@@ -28,89 +40,246 @@ getgenv().TARGET_SPAWN_TIME = {}
 local RETRY_INTERVAL = 1
 
 local function getUnitID(m)
-	return m:GetAttribute("Index") or m.Name
+    if not m then
+        return nil
+    end
+
+    return m:GetAttribute("Index") or m.Name
 end
 
 local function canProcessUnit(m)
 
-	if getgenv().SEEN_UNIT_INSTANCES[m] then
-		return not getgenv().FORGOTTEN_UNITS[getUnitID(m)]
-	end
+    if not m then
+        return false
+    end
 
-	getgenv().SEEN_UNIT_INSTANCES[m] = true
+    local id = getUnitID(m)
 
-	local id = getUnitID(m)
+    if not id then
+        return false
+    end
 
-	getgenv().UNIT_SPAWN_COUNT[id] =
-		(getgenv().UNIT_SPAWN_COUNT[id] or 0) + 1
+    if getgenv().SEEN_UNIT_INSTANCES[m] then
+        return not getgenv().FORGOTTEN_UNITS[id]
+    end
 
-	if getgenv().UNIT_SPAWN_COUNT[id] >= getgenv().MAX_SPAWN_BEFORE_FORGET then
-		getgenv().FORGOTTEN_UNITS[id] = true
-		return false
-	end
+    getgenv().SEEN_UNIT_INSTANCES[m] = true
 
-	return true
+    getgenv().UNIT_SPAWN_COUNT[id] =
+        (getgenv().UNIT_SPAWN_COUNT[id] or 0) + 1
+
+    if getgenv().UNIT_SPAWN_COUNT[id]
+        >= getgenv().MAX_SPAWN_BEFORE_FORGET then
+
+        getgenv().FORGOTTEN_UNITS[id] = true
+
+        return false
+    end
+
+    return true
+end
+
+local function isIgnoredLuckyBlock(name)
+
+    local ignoreList =
+        getgenv().LUCKY_BLOCK_IGNORE
+
+    if type(ignoreList) ~= "table" then
+        return false
+    end
+
+    local lowerName =
+        string.lower(tostring(name))
+
+    for _, ignored in ipairs(ignoreList) do
+
+        if ignored ~= nil then
+
+            local ignoreText =
+                string.lower(tostring(ignored))
+
+            if ignoreText ~= ""
+                and string.find(
+                    lowerName,
+                    ignoreText,
+                    1,
+                    true
+                ) then
+
+                return true
+            end
+
+        end
+
+    end
+
+    return false
+end
+
+local function isLuckyBlock(m)
+
+    local config =
+        getgenv().LUCKY_BLOCK_CONFIG
+
+    if not config
+        or config.ENABLE == false then
+
+        return false
+    end
+
+    local idx =
+        m:GetAttribute("Index")
+
+    if not idx then
+        return false
+    end
+
+    local name =
+        tostring(idx)
+
+    local keyword =
+        tostring(
+            config.KEYWORD or "lucky block"
+        )
+
+    if not string.find(
+        string.lower(name),
+        string.lower(keyword),
+        1,
+        true
+    ) then
+
+        return false
+    end
+
+    if isIgnoredLuckyBlock(name) then
+        return false
+    end
+
+    return true
 end
 
 local function isTarget(m)
 
-	if getgenv().FORGOTTEN_UNITS[getUnitID(m)] then
-		return false
-	end
+    if not m then
+        return false
+    end
 
-	local idx = m:GetAttribute("Index")
-	if not idx then return false end
+    local id =
+        getUnitID(m)
 
-	for _,v in ipairs(getgenv().TARGET_LIST) do
-		if idx == v then
-			return canProcessUnit(m)
-		end
-	end
+    if not id then
+        return false
+    end
 
-	return false
+    if getgenv().FORGOTTEN_UNITS[id] then
+        return false
+    end
+
+    local idx =
+        m:GetAttribute("Index")
+
+    if not idx then
+        return false
+    end
+
+    if isLuckyBlock(m) then
+        return canProcessUnit(m)
+    end
+
+    local targetList =
+        getgenv().TARGET_LIST
+
+    if type(targetList) ~= "table" then
+        return false
+    end
+
+    for _, v in ipairs(targetList) do
+
+        if idx == v then
+
+            return canProcessUnit(m)
+
+        end
+
+    end
+
+    return false
 end
 
 local function getTargetPart(model)
 
-	if model.PrimaryPart then
-		return model.PrimaryPart
-	end
+    if not model then
+        return nil
+    end
 
-	for _,d in ipairs(model:GetDescendants()) do
-		if d:IsA("BasePart") then
-			return d
-		end
-	end
+    if model.PrimaryPart then
+        return model.PrimaryPart
+    end
 
+    for _, d in ipairs(model:GetDescendants()) do
+
+        if d:IsA("BasePart") then
+            return d
+        end
+
+    end
+
+    return nil
 end
 
 local function hasPurchasePrompt(model)
 
-	for _,d in ipairs(model:GetDescendants()) do
-		if d:IsA("ProximityPrompt") and d.ActionText == "Purchase" then
-			return true
-		end
-	end
+    if not model then
+        return false
+    end
 
-	return false
+    for _, d in ipairs(model:GetDescendants()) do
+
+        if d:IsA("ProximityPrompt")
+            and d.ActionText == "Purchase" then
+
+            return true
+
+        end
+
+    end
+
+    return false
 end
 
 local function addTarget(unit)
 
-	if getgenv().TARGET_SPAWN_TIME[unit] then return end
+    if not unit
+        or not unit.Parent then
 
-	getgenv().TARGET_SPAWN_TIME[unit] = tick()
-	table.insert(getgenv().TARGET_QUEUE,unit)
+        return
+    end
 
+    if getgenv().TARGET_SPAWN_TIME[unit] then
+        return
+    end
+
+    getgenv().TARGET_SPAWN_TIME[unit] = tick()
+
+    table.insert(
+        getgenv().TARGET_QUEUE,
+        unit
+    )
 end
 
 local function scanExistingTargets()
 
-	for _,o in ipairs(workspace:GetDescendants()) do
-		if o:IsA("Model") and isTarget(o) then
-			addTarget(o)
-		end
-	end
+    for _, o in ipairs(workspace:GetDescendants()) do
+
+        if o:IsA("Model")
+            and isTarget(o) then
+
+            addTarget(o)
+
+        end
+
+    end
 
 end
 
@@ -118,276 +287,458 @@ scanExistingTargets()
 
 workspace.DescendantAdded:Connect(function(o)
 
-	if o:IsA("Model") and isTarget(o) then
-		addTarget(o)
-	end
+    if o:IsA("Model")
+        and isTarget(o) then
+
+        addTarget(o)
+
+    end
 
 end)
+
 
 local lastCash
 local cashValue
 
 local function setupCashWatcher()
 
-	local stats = player:FindFirstChild("leaderstats")
-	if not stats then return end
+    local stats =
+        player:FindFirstChild("leaderstats")
 
-	cashValue =
-		stats:FindFirstChild("Cash")
-		or stats:FindFirstChild("Money")
-		or stats:FindFirstChild("Coins")
+    if not stats then
+        return
+    end
 
-	if not cashValue then return end
+    cashValue =
+        stats:FindFirstChild("Cash")
+        or stats:FindFirstChild("Money")
+        or stats:FindFirstChild("Coins")
 
-	lastCash = cashValue.Value
+    if not cashValue then
+        return
+    end
 
-	cashValue:GetPropertyChangedSignal("Value"):Connect(function()
+    lastCash =
+        cashValue.Value
 
-		if not getgenv().currentTarget then
-			lastCash = cashValue.Value
-			return
-		end
+    cashValue:GetPropertyChangedSignal("Value"):Connect(function()
 
-		if cashValue.Value < lastCash then
+        if not getgenv().currentTarget then
 
-			local tgt = getgenv().currentTarget
+            lastCash =
+                cashValue.Value
 
-			if tgt then
-				getgenv().FORGOTTEN_UNITS[getUnitID(tgt)] = true
-			end
+            return
+        end
 
-			getgenv().currentTarget = nil
+        if cashValue.Value < lastCash then
 
-		end
+            local tgt =
+                getgenv().currentTarget
 
-		lastCash = cashValue.Value
+            if tgt then
 
-	end)
+                local id =
+                    getUnitID(tgt)
+
+                if id then
+                    getgenv().FORGOTTEN_UNITS[id] = true
+                end
+
+            end
+
+            getgenv().TARGET_SPAWN_TIME[tgt] = nil
+            getgenv().currentTarget = nil
+
+        end
+
+        lastCash =
+            cashValue.Value
+
+    end)
 
 end
 
+
 task.spawn(function()
 
-	repeat task.wait(1) until player:FindFirstChild("leaderstats")
-	setupCashWatcher()
+    repeat
+        task.wait(1)
+    until player:FindFirstChild("leaderstats")
+
+    setupCashWatcher()
 
 end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt)
 
-	if prompt.ActionText ~= "Purchase" then return end
+    if prompt.ActionText ~= "Purchase" then
+        return
+    end
 
-	local model = prompt:FindFirstAncestorOfClass("Model")
-	if not model then return end
+    local model =
+        prompt:FindFirstAncestorOfClass("Model")
 
-	if not isTarget(model) then return end
+    if not model then
+        return
+    end
 
-	task.wait(0.05)
+    if not isTarget(model) then
+        return
+    end
 
-	pcall(function()
-		fireproximityprompt(prompt)
-	end)
+    task.wait(0.05)
+
+    pcall(function()
+
+        fireproximityprompt(prompt)
+
+    end)
 
 end)
 
 task.spawn(function()
 
-	while true do
+    while true do
 
-		if not getgenv().currentTarget then
+        if not getgenv().currentTarget then
 
-			repeat
-				getgenv().currentTarget =
-					table.remove(getgenv().TARGET_QUEUE,1)
-			until not getgenv().currentTarget
-				or getgenv().currentTarget.Parent
+            repeat
 
-			getgenv().targetStartTime = tick()
+                getgenv().currentTarget =
+                    table.remove(
+                        getgenv().TARGET_QUEUE,
+                        1
+                    )
 
-		end
+            until not getgenv().currentTarget
+                or getgenv().currentTarget.Parent
 
-		local tgt = getgenv().currentTarget
+            getgenv().targetStartTime =
+                tick()
 
-		if tgt and tgt.Parent then
+        end
 
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			local part = getTargetPart(tgt)
 
-			if hum and hrp and part then
+        local tgt =
+            getgenv().currentTarget
 
-				local spawnTime =
-					getgenv().TARGET_SPAWN_TIME[tgt]
 
-				if not spawnTime or
-					tick() - spawnTime >= getgenv().CHASE_DELAY then
+        if tgt and tgt.Parent then
 
-					local dist =
-						(hrp.Position - part.Position).Magnitude
+            local char =
+                player.Character
 
-					if false then
-						hum:MoveTo(part.Position)
-					end
+            local hum =
+                char and
+                char:FindFirstChildOfClass("Humanoid")
 
-					if dist <= getgenv().GRAB_RADIUS then
+            local hrp =
+                char and
+                char:FindFirstChild("HumanoidRootPart")
 
-						if not hasPurchasePrompt(tgt) then
+            local part =
+                getTargetPart(tgt)
 
-							local id = getUnitID(tgt)
 
-							getgenv().FORGOTTEN_UNITS[id] = true
-							getgenv().TARGET_SPAWN_TIME[tgt] = nil
-							getgenv().currentTarget = nil
+            if hum
+                and hrp
+                and part then
 
-						end
+                local spawnTime =
+                    getgenv().TARGET_SPAWN_TIME[tgt]
 
-					end
 
-				end
+                if not spawnTime
+                    or tick() - spawnTime
+                    >= getgenv().CHASE_DELAY then
 
-			end
+                    local dist =
+                        (
+                            hrp.Position
+                            - part.Position
+                        ).Magnitude
 
-			if tick() - getgenv().targetStartTime >= getgenv().TARGET_TIMEOUT then
-				getgenv().currentTarget = nil
-			end
 
-		else
+                    if dist
+                        <= getgenv().GRAB_RADIUS then
 
-			getgenv().currentTarget = nil
+                        -- Kalau sudah dekat tetapi prompt
+                        -- sudah hilang, anggap target selesai
+                        if not hasPurchasePrompt(tgt) then
 
-		end
+                            local id =
+                                getUnitID(tgt)
 
-		task.wait(RETRY_INTERVAL)
+                            if id then
+                                getgenv().FORGOTTEN_UNITS[id] = true
+                            end
 
-	end
+                            getgenv().TARGET_SPAWN_TIME[tgt] = nil
+                            getgenv().currentTarget = nil
+
+                        end
+
+                    end
+
+                end
+
+            end
+
+
+            -- Timeout target
+            if tick()
+                - getgenv().targetStartTime
+                >= getgenv().TARGET_TIMEOUT then
+
+                getgenv().TARGET_SPAWN_TIME[tgt] = nil
+                getgenv().currentTarget = nil
+
+            end
+
+
+        else
+
+            getgenv().currentTarget = nil
+
+        end
+
+
+        task.wait(RETRY_INTERVAL)
+
+    end
 
 end)
 
-local HOME_POS = Vector3.new(-410.1356201171875, -6.501974582672119, 208.25595092773438)
+local HOME_POS = Vector3.new(-410.1356201171875,-6.501974582672119,208.25595092773438)
+
 local RETURN_DISTANCE = 5
 
+
 task.spawn(function()
 
-	while true do
+    while true do
 
-		local char = player.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+        local char =
+            player.Character
 
-		if hum and root and hum.Health > 0 then
+        local hum =
+            char and
+            char:FindFirstChildOfClass("Humanoid")
 
-			local target =
-				Vector3.new(HOME_POS.X,root.Position.Y,HOME_POS.Z)
+        local root =
+            char and
+            char:FindFirstChild("HumanoidRootPart")
 
-			if (root.Position - target).Magnitude >= RETURN_DISTANCE then
-				hum:MoveTo(target)
-			end
 
-		end
+        if hum
+            and root
+            and hum.Health > 0 then
 
-		task.wait(1)
+            local target =
+                Vector3.new(
+                    HOME_POS.X,
+                    root.Position.Y,
+                    HOME_POS.Z
+                )
 
-	end
+
+            if (
+                root.Position
+                - target
+            ).Magnitude
+                >= RETURN_DISTANCE then
+
+                hum:MoveTo(target)
+
+            end
+
+        end
+
+
+        task.wait(1)
+
+    end
 
 end)
-
 
 if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
-	getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
-	local AUTO_RESET_DELAY = 30000
+    getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
 
-	task.spawn(function()
+    local AUTO_RESET_DELAY = 30000
 
-		while true do
 
-			task.wait(AUTO_RESET_DELAY)
+    task.spawn(function()
 
-			local char = player.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
+        while true do
 
-			if hum and hum.Health > 0 then
-				if not getgenv().currentTarget
-					and #getgenv().TARGET_QUEUE == 0 then
-					hum.Health = 0
-				end
-			end
+            task.wait(AUTO_RESET_DELAY)
 
-		end
 
-	end)
+            local char =
+                player.Character
+
+            local hum =
+                char and
+                char:FindFirstChildOfClass("Humanoid")
+
+
+            if hum
+                and hum.Health > 0 then
+
+                if not getgenv().currentTarget
+                    and #getgenv().TARGET_QUEUE == 0 then
+
+                    hum.Health = 0
+
+                end
+
+            end
+
+        end
+
+    end)
 
 end
 
 if not getgenv().__KAMI_APA_AUTO_SPEED_COIL then
-	getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
-	local function equipSpeedCoil()
+    getgenv().__KAMI_APA_AUTO_SPEED_COIL = true
 
-		local char = player.Character
-		if not char then return end
 
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if not hum then return end
+    local function equipSpeedCoil()
 
-		local backpack = player:FindFirstChildOfClass("Backpack")
-		if not backpack then return end
+        local char =
+            player.Character
 
-		for _,tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and string.find(string.lower(tool.Name),"speed") then
-				hum:EquipTool(tool)
-				break
-			end
-		end
+        if not char then
+            return
+        end
 
-	end
 
-	player.CharacterAdded:Connect(function()
-		task.wait(1)
-		equipSpeedCoil()
-	end)
+        local hum =
+            char:FindFirstChildOfClass("Humanoid")
 
-	if player:FindFirstChildOfClass("Backpack") then
-		player.Backpack.ChildAdded:Connect(function(tool)
-			task.wait(0.2)
-			equipSpeedCoil()
-		end)
-	end
+        if not hum then
+            return
+        end
 
-	task.spawn(function()
-		while true do
-			equipSpeedCoil()
-			task.wait(1)
-		end
-	end)
+
+        local backpack =
+            player:FindFirstChildOfClass("Backpack")
+
+        if not backpack then
+            return
+        end
+
+
+        for _, tool in ipairs(
+            backpack:GetChildren()
+        ) do
+
+            if tool:IsA("Tool")
+                and string.find(
+                    string.lower(tool.Name),
+                    "speed",
+                    1,
+                    true
+                ) then
+
+                hum:EquipTool(tool)
+
+                break
+
+            end
+
+        end
+
+    end
+
+
+    player.CharacterAdded:Connect(function()
+
+        task.wait(1)
+
+        equipSpeedCoil()
+
+    end)
+
+
+    if player:FindFirstChildOfClass("Backpack") then
+
+        player.Backpack.ChildAdded:Connect(function(tool)
+
+            task.wait(0.2)
+
+            equipSpeedCoil()
+
+        end)
+
+    end
+
+
+    task.spawn(function()
+
+        while true do
+
+            equipSpeedCoil()
+
+            task.wait(1)
+
+        end
+
+    end)
 
 end
 
+
 if not getgenv().__KAMI_APA_AUTO_BUY_FIX then
-	getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
-	task.spawn(function()
-		while true do
+    getgenv().__KAMI_APA_AUTO_BUY_FIX = true
 
-			local tgt = getgenv().currentTarget
 
-			if tgt and tgt.Parent then
-				for _,v in ipairs(tgt:GetDescendants()) do
-					if v:IsA("ProximityPrompt") 
-					and v.Enabled 
-					and v.ActionText == "Purchase" then
-						
-						pcall(function()
-							fireproximityprompt(v, 0)
-						end)
+    task.spawn(function()
 
-						task.wait(0.2)
-					end
-				end
-			end
+        while true do
 
-			task.wait(0.3)
-		end
-	end)
+            local tgt =
+                getgenv().currentTarget
+
+
+            if tgt
+                and tgt.Parent then
+
+                for _, v in ipairs(
+                    tgt:GetDescendants()
+                ) do
+
+                    if v:IsA("ProximityPrompt")
+                        and v.Enabled
+                        and v.ActionText == "Purchase" then
+
+                        pcall(function()
+
+                            fireproximityprompt(
+                                v,
+                                0
+                            )
+
+                        end)
+
+                        task.wait(0.2)
+
+                    end
+
+                end
+
+            end
+
+
+            task.wait(0.3)
+
+        end
+
+    end)
+
 end
