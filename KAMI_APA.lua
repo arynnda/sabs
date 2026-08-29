@@ -463,8 +463,6 @@ task.spawn(function()
                     if dist
                         <= getgenv().GRAB_RADIUS then
 
-                        -- Kalau sudah dekat tetapi prompt
-                        -- sudah hilang, anggap target selesai
                         if not hasPurchasePrompt(tgt) then
 
                             local id =
@@ -486,7 +484,6 @@ task.spawn(function()
             end
 
 
-            -- Timeout target
             if tick()
                 - getgenv().targetStartTime
                 >= getgenv().TARGET_TIMEOUT then
@@ -566,7 +563,7 @@ if not getgenv().__KAMI_APA_AUTO_RESET_RUNNING then
 
     getgenv().__KAMI_APA_AUTO_RESET_RUNNING = true
 
-    local AUTO_RESET_DELAY = 30000
+    local AUTO_RESET_DELAY = 1200
 
 
     task.spawn(function()
