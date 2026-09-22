@@ -9,7 +9,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local player = Players.LocalPlayer
 
 getgenv().TARGET_LIST = getgenv().TARGET_LIST or {}
-getgenv().LUCKY_BLOCK_IGNORE = getgenv().LUCKY_BLOCK_IGNORE or { "Mythic Lucky Block", "Brainrot God Lucky Block", "Admin Lucky Block" }
+getgenv().LUCKY_BLOCK_IGNORE = getgenv().LUCKY_BLOCK_IGNORE or { "Mythic Lucky Block", "Brainrot God Lucky Block", "Admin Lucky Block", "Taco Lucky Block" }
 getgenv().LUCKY_BLOCK_CONFIG = getgenv().LUCKY_BLOCK_CONFIG or {
     ENABLE = true,
     KEYWORD = "Lucky Block"
